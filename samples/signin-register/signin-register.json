@@ -1,0 +1,8 @@
+{
+    "index": {
+        "children": [
+            "signin",
+            "register"
+        ]
+    }
+}

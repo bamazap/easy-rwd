@@ -1,0 +1,30 @@
+#!/usr/bin/env node
+var find = require('find');
+var utils = require('../utils');
+var build = require('../index')
+
+var args = process.argv.slice(2);
+
+if (args.indexOf('--help') >= 0 || args.indexOf('-h') >= 0) {
+  utils.exit('Usage: easy-rwd <json app spec>');
+}
+
+var file = args.shift();
+
+// If no file is named, try to get the only json file.
+// if file is named, verify it exists
+// TODO: search current directory only (no child directories)
+if (!file) {
+  var files = find.fileSync(/\.json$/, '.');
+  if (files.length === 0) {
+    utils.exit('No JSON file found in the current directory.', 1);
+  } else if (files.length > 1) {
+    utils.exit('More than JSON file found. Please specify filename.', 1);
+  } else {
+    file = files[0];
+  }
+} else if (find.fileSync(file, '.').length !== 1) {
+  utils.exit(`File ${file} not found.`, 1);
+}
+
+build(file);
