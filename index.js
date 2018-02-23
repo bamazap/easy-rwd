@@ -1,24 +1,20 @@
 #!/usr/bin/env node
-var fileio = require('./fileio');
-var widgetUtils = require('./widgets');
-var htmlcss = require('./htmlcss');
+const fileio = require('./fileio');
+const widgetUtils = require('./widgets');
+const htmlcss = require('./htmlcss');
 
-var build = function(file) {
-  var widgets = fileio.readIn(file);
-  var userStyles = fileio.readCSS();
-  var head = fileio.readHead();
+function build(file) {
+  const widgets = fileio.readIn(file);
+  const userStyles = fileio.readCSS();
+  const head = fileio.readHead();
 
-  widgetUtils.processWidgets(widgets);
+  const appName = file.substr(0, file.lastIndexOf('.'));
 
-  var appName = file.substr(0, file.lastIndexOf('.'));
-
-  Object.keys(widgets).forEach(function(widgetName) {
-    if (widgets[widgetName]['page'] === true) {
-      var page = widgetUtils.uniqify(widgets[widgetName]);
-      var html = htmlcss.buildPageHTML(page, appName, head);
-      var css = ''; // TODO
-      fileio.writeOut(page['name'], html, css);
-    }
+  widgetUtils.getPages(widgets).forEach((page) => {
+    widgets[page.name].html = htmlcss.buildWidgetHTML(page);
+    const html = htmlcss.pageHTML(page, appName, head);
+    const css = userStyles; // TODO
+    fileio.writeOut(page.name, html, css);
   });
 }
 
