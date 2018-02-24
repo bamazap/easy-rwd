@@ -1,17 +1,21 @@
 const graphlib = require('graphlib');
 
 const utils = require('./utils');
+const range = require('./range');
 
 class Layout {
-  constructor(widgetIDs) {
+  constructor(widgetArr) {
     // represent with two graphs
     this.right = new graphlib.Graph();
     this.down = new graphlib.Graph();
 
+    this.widgetsByLocalID = {};
+
     // add nodes to the graphs representing widgets
-    widgetIDs.forEach((widgetID) => {
-      this.right.setNode(widgetID);
-      this.down.setNode(widgetID);
+    widgetArr.forEach((widget) => {
+      this.right.setNode(widget.localID);
+      this.down.setNode(widget.localID);
+      this.widgetsByLocalID[widget.localID] = widget;
     });
   }
 
@@ -49,12 +53,38 @@ class Layout {
   addBelow(above, below) {
     this.down.setEdge(above, below);
   }
+
+  // calculates the range containing all possible widths of this widget
+  calculateWidth() {
+    // function to recursively calculate width
+    const recursiveStep = (localID) => {
+      // the widgets directly on the right of this one
+      const localIDsOfWidgetsOnRight = this.right.successors();
+      // base case: if there are no widgets on the right, return your width
+      if (localIDsOfWidgetsOnRight.length === 0) {
+        return this.widgetsByLocalID[localID].width;
+      }
+      // recursively calculate the width of all widgets on this one's right
+      // and determine the range of possible overall widths for the right
+      const rightWidth = localIDsOfWidgetsOnRight
+        .map(rightLocalID => recursiveStep(rightLocalID))
+        .reduce((maxWidth, width) => range.maxRanges(maxWidth, width));
+      // return the added with of this widget and the ones on its right
+      return range.addRanges(this.widgetsByLocalID[localID].width, rightWidth);
+    };
+
+    // call the recursive function on all widgets on the far left
+    // and determine the range of possible overall widths
+    return this.right.sources()
+      .map(localID => recursiveStep(localID))
+      .reduce((maxWidth, width) => range.maxRanges(maxWidth, width));
+  }
 }
 
 // simply produces a layout
 // this version is not really meant to optimize anything
 function layoutV1(parent, w) {
-  const layout = new Layout(parent.children.map(child => child.id));
+  const layout = new Layout(parent.children);
   let x = 0;
   let lastRow = [];
   let thisRow = [];
@@ -72,19 +102,23 @@ function layoutV1(parent, w) {
   return layout;
 }
 
-function createLayouts(page) {
+// creates layouts with breakpoints for a widget
+// ouput is a ResponsiveLayout: array of number, Layout pairs
+//   the number specifies the minimum width for which the layout is valid
+function createLayouts(widget) {
   const responsiveLayout = [];
   let lastLayout = null;
   let newLayout = null;
-  utils.range(1920).forEach((i) => {
-    newLayout = layoutV1(page, i);
-    if (lastLayout && newLayout.equals(lastLayout)) {
-      responsiveLayout[responsiveLayout.length - 1][0][1] = i;
-    } else {
+  utils.range(1921).forEach((i) => {
+    newLayout = layoutV1(widget, i);
+    if (lastLayout === null || !newLayout.equals(lastLayout)) {
       lastLayout = newLayout;
-      responsiveLayout.push([[i, i], newLayout]);
+      responsiveLayout.push([i, newLayout]);
     }
   });
+  return responsiveLayout;
 }
 
-module.exports = createLayouts;
+module.exports = {
+  createLayouts,
+};
