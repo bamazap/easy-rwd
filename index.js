@@ -18,7 +18,7 @@ function build(file) {
     if (!widget.html) {
       widget.html = htmlcss.buildWidgetHTML(widget);
       widget.layouts = layoutUtils.createLayouts(widget);
-      // TODO: calculate sizes of generated widgets
+      widget.width = layoutUtils.widthOfLayouts(widget.layouts);
     }
   });
 

@@ -105,12 +105,12 @@ function layoutV1(parent, w) {
 // creates layouts with breakpoints for a widget
 // ouput is a ResponsiveLayout: array of number, Layout pairs
 //   the number specifies the minimum width for which the layout is valid
-function createLayouts(widget) {
+function createLayouts(widget, layoutAlg = layoutV1) {
   const responsiveLayout = [];
   let lastLayout = null;
   let newLayout = null;
   utils.range(1921).forEach((i) => {
-    newLayout = layoutV1(widget, i);
+    newLayout = layoutAlg(widget, i);
     if (lastLayout === null || !newLayout.equals(lastLayout)) {
       lastLayout = newLayout;
       responsiveLayout.push([i, newLayout]);
@@ -119,6 +119,18 @@ function createLayouts(widget) {
   return responsiveLayout;
 }
 
+// given a layouts array (of [minWidth, Layout] length-2 arrays)
+// return a single width range which contains its possible widths
+function widthOfLayouts(layouts) {
+  return layouts
+    .map(([minWidth, layout], i) => {
+      const maxWidth = i + 1 < layouts.width ? layouts[i][0] - 1 : Infinity;
+      return range.clipRange(layout.calculateWidth(), minWidth, maxWidth);
+    })
+    .reduce((totalWidth, width) => range.unionRanges(totalWidth, width));
+}
+
 module.exports = {
   createLayouts,
+  widthOfLayouts,
 };
