@@ -37,19 +37,34 @@ function readWidgets(file) {
 function parseSizeComment(sizeComment) {
   const sizeJSON = sizeComment.replace('<!--', '{').replace('-->', '}');
   const sizeObj = JSON.parse(sizeJSON);
-  // width should be an array of arrays of numbers
+
   // helper function to check if all elements of an array are numbers
   const allNumbers = arr => utils.allTrue(arr, x => typeof x === 'number');
+  // helper function to fail if size comment isn't correctly formatted
+  const failBadSizeComment = () => {
+    utils.exit(`Badly formatted size comment: ${sizeComment}`, 1);
+  };
+
+  // width should be an array of arrays of numbers
   if (typeof sizeObj.width === 'number') {
-    // shorthand: allow a single number
+    // shorthand: allow a single number for constant width
     sizeObj.width = [[sizeObj.width, sizeObj.width]];
   } else if (sizeObj.width.length === 2 && allNumbers(sizeObj.width)) {
-    // shorthand: allow a single array of numbers
+    // shorthand: allow a single array of numbers for continuous width range
     sizeObj.width = [sizeObj.width];
   } else if (!utils.allTrue(sizeObj.width, allNumbers)) {
-    // fail if size comment is badly formatted
-    utils.exit(`Badly formatted size comment: ${sizeComment}`, 1);
+    failBadSizeComment();
   }
+
+  // height should be a number
+  // TODO: eventually support non-constant height for base widgets
+  if (typeof sizeObj.height !== 'number') {
+    failBadSizeComment();
+  }
+  const { height } = sizeObj;
+  // create a height function
+  sizeObj.height = _w => height;
+
   return sizeObj;
 }
 

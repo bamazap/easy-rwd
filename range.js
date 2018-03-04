@@ -1,3 +1,5 @@
+const utils = require('./utils');
+
 // a range is an array of segments
 //   where segment i (Si) and segment i+1 (Sj) satisfy Si[1] < Sj[0]
 // a segment is a length-2 array of numbers [a, b] where a <= b
@@ -29,7 +31,7 @@ function unionSegments(segment1, segment2) {
 function clipRange(range, min, max) {
   return range
     .filter(segment => segment[1] >= min && segment[0] <= max)
-    .map(segment => [max(segment[0], min), min(segment[1], max)]);
+    .map(segment => [Math.max(segment[0], min), Math.min(segment[1], max)]);
 }
 
 // returns a new range which contains all values c in range 1 or range 2
@@ -114,10 +116,70 @@ function addRanges(range1, range2) {
   return newRange;
 }
 
+function rangeForEach(range, f) {
+  range.forEach(([a, b]) => {
+    utils.range(a, b).forEach(f);
+  });
+}
+
+// returns the smallest value in the range
+function rangeMin(range) {
+  return range[0][0];
+}
+
+// returns the largest value in the range
+function rangeMax(range) {
+  return range[range.length - 1][1];
+}
+
+// returns true if i is in range false otherwise
+function rangeIn(range, i) {
+  return range.reduce((isIn, [a, b]) => isIn || (i >= a && i <= b), false);
+}
+
+// returns the largest value in range that is <= i
+// if i is smaller than the smallest value s in range, return s
+function rangeFloor(range, i) {
+  let ans = null;
+  utils.forEachReverse(range, ([a, b]) => {
+    if (i > b) {
+      ans = b;
+    } else if (i >= a && i <= b) {
+      ans = i;
+    }
+  });
+  if (ans === null) {
+    ans = rangeMin(range);
+  }
+  return ans;
+}
+
+// returns the smallest value in range that is >= i
+// if i is larger than the largest value l in range, return l
+function rangeCeil(range, i) {
+  let ans = null;
+  range.forEach(([a, b]) => {
+    if (i < a) {
+      ans = a;
+    } else if (i >= a && i <= b) {
+      ans = i;
+    }
+  });
+  if (ans === null) {
+    ans = rangeMax(range);
+  }
+  return ans;
+}
+
+
 module.exports = {
   addRanges,
   unionRanges,
   maxRanges,
   minRanges,
   clipRange,
+  rangeForEach,
+  rangeIn,
+  rangeFloor,
+  rangeCeil,
 };

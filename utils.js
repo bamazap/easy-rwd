@@ -31,14 +31,12 @@ function allTrue(arr, f) {
 // range(a, b) => [a, a+1, ..., b-1] ([] if a >= b)
 // range(a, b, s) => [a, a+s, a+2*s, ..., a+n*s] (max n s.t. a+n*s < b)
 function range(start, stop, step = 1) {
-  if (stop === undefined) {
-    stop = start; // eslint-disable-line no-param-reassign
-    start = 0; // eslint-disable-line no-param-reassign
-  }
-  const length = Math.max(Math.floor((stop - start) / step), 0);
+  const begin = stop === undefined ? 0 : start;
+  const end = stop === undefined ? start : stop;
+  const length = Math.max(Math.floor((end - begin) / step), 0);
   const output = new Array(length);
   for (let i = 0; i < length; i += 1) {
-    output[i] = start + (step * i);
+    output[i] = begin + (step * i);
   }
   return output;
 }
@@ -54,6 +52,8 @@ function copyObject(obj) {
 
 // returns a new object which is a copy of extendObj
 //   and also has a view of oldObj
+// all fields present in oldObj are aliased in newObj
+// you cannot, however, add fields to oldObj if you only have newObj
 function wrap(oldObj, extendObj) {
   const newObj = copyObject(extendObj);
   Object.keys(oldObj).filter(k => newObj[k] === undefined).forEach((k) => {
@@ -62,6 +62,7 @@ function wrap(oldObj, extendObj) {
       set: (v) => {
         oldObj[k] = v; // eslint-disable-line no-param-reassign
       },
+      enumerable: true,
     });
   });
   return newObj;
@@ -86,6 +87,12 @@ class Counter {
   }
 }
 
+function forEachReverse(arr, f) {
+  for (let i = arr.length - 1; i >= 0; i -= 1) {
+    f(arr[i]);
+  }
+}
+
 module.exports = {
   exit,
   getOrDefault,
@@ -93,4 +100,5 @@ module.exports = {
   range,
   wrap,
   Counter,
+  forEachReverse,
 };

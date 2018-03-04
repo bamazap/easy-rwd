@@ -60,12 +60,10 @@ function uniqifyLocally(widgets) {
 //   unique objects with unique 'globalID' values
 // unique widget objects maintain views of their original widget objects
 function uniqifyGlobally(widget, counter) {
-  if (counter === undefined) {
-    counter = new utils.Counter(); // eslint-disable-line no-param-reassign
-  }
-  const id = counter.count(widget.name);
-  const children = widget.children.map(child => uniqifyGlobally(child));
-  return utils.wrap(widget, { id, children });
+  const counts = counter === undefined ? new utils.Counter() : counter;
+  const globalID = `${widget.name}-${counts.count(widget.name)}`;
+  const children = widget.children.map(child => uniqifyGlobally(child, counts));
+  return utils.wrap(widget, { globalID, children });
 }
 
 module.exports = {

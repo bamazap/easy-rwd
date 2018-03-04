@@ -35,7 +35,12 @@ function pageHTML(page, appName, head) {
     </html>`;
 }
 
+function pageCSS(page) {
+  return page ? '' : ''; // TODO: implement
+}
+
 module.exports = {
   buildWidgetHTML,
   pageHTML,
+  pageCSS,
 };
