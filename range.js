@@ -182,4 +182,6 @@ module.exports = {
   rangeIn,
   rangeFloor,
   rangeCeil,
+  rangeMin,
+  rangeMax,
 };

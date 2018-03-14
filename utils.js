@@ -50,6 +50,15 @@ function copyObject(obj) {
   return copy;
 }
 
+// checks if two objects have the same key-value pairs
+// equality for keys and values uses ===
+function objectsEqual(obj1, obj2) {
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
+  if (keys1.length !== keys2.length) return false;
+  return keys1.reduce((eq, key) => eq && obj1[key] === obj2[key]);
+}
+
 // returns a new object which is a copy of extendObj
 //   and also has a view of oldObj
 // all fields present in oldObj are aliased in newObj
@@ -93,6 +102,14 @@ function forEachReverse(arr, f) {
   }
 }
 
+function sum(arr) {
+  return arr.reduce((accumulator, value) => accumulator + value);
+}
+
+function clip(x, min, max) {
+  return Math.min(Math.max(x, min), max);
+}
+
 module.exports = {
   exit,
   getOrDefault,
@@ -101,4 +118,7 @@ module.exports = {
   wrap,
   Counter,
   forEachReverse,
+  sum,
+  clip,
+  objectsEqual,
 };

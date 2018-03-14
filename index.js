@@ -16,7 +16,6 @@ function build(file) {
   widgetUtils.topologicallySort(widgets).forEach((widgetName) => {
     const widget = widgets[widgetName];
     if (widget.children.length > 0) {
-      widget.html = htmlcss.buildWidgetHTML(widget);
       widget.layouts = layoutUtils.createLayouts(widget, algorithms.layoutV1);
       widget.width = layoutUtils.widthOfLayouts(widget.layouts);
       widget.height = layoutUtils.heightOfLayouts(widget.layouts, widget.width);

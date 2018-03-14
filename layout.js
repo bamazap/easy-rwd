@@ -30,7 +30,7 @@ class Layout {
     if (graph1.nodeCount() !== graph2.nodeCount()) return false;
     if (graph1.edgeCount() !== graph2.edgeCount()) return false;
     // node ids must be the same
-    if (!graph1.edges().reduce((b, node) => b && graph2.hasNode(node), true)) {
+    if (!graph1.nodes().reduce((b, node) => b && graph2.hasNode(node), true)) {
       return false;
     }
     // edges must be between the same nodes
@@ -78,7 +78,7 @@ class Layout {
 
     const recursiveStep = (localID) => {
       // the widgets directly below this one
-      const localIDsOfWidgetsBelow = this.down.successors();
+      const localIDsOfWidgetsBelow = this.down.successors(localID);
 
       // base case: if there are no widgets below you, return your height
       if (localIDsOfWidgetsBelow.length === 0) {
@@ -126,6 +126,18 @@ class Layout {
       .map(localID => recursiveStep(localID))
       .reduce((maxWidth, width) => range.maxRanges(maxWidth, width));
   }
+
+  toString() {
+    return `right: \n${
+      this.right.edges()
+        .map(({ v, w }) => `  ${v} -> ${w}\n`)
+        .reduce((a, b) => a + b, '')
+    }down:\n${
+      this.down.edges()
+        .map(({ v, w }) => `  ${v} -> ${w}\n`)
+        .reduce((a, b) => a + b, '')
+    }`;
+  }
 }
 
 // creates layouts with breakpoints for a widget
@@ -138,6 +150,7 @@ function createLayouts(widget, layoutAlg) {
   utils.range(1921).forEach((i) => {
     newLayout = layoutAlg(widget, i);
     if (lastLayout === null || !newLayout.equals(lastLayout)) {
+      console.log(newLayout.toString());
       lastLayout = newLayout;
       responsiveLayout.push([i, newLayout]);
     }

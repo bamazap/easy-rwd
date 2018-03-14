@@ -3,12 +3,14 @@ const fs = require('fs-extra');
 
 const utils = require('./utils');
 
+const reservedNames = ['head', 'erwd-widget', 'erwd-children'];
+
 // reads and processes JSON file to create widgets object
 function readWidgets(file) {
   const widgets = JSON.parse(fs.readFileSync(file, 'utf8'));
   Object.keys(widgets).forEach((widgetName) => {
-    if (widgetName === 'head') {
-      utils.exit('Widget called "head" uses reserved name', 1);
+    if (reservedNames.indexOf(widgetName) !== -1) {
+      utils.exit(`Widget called ${widgetName} uses reserved name`, 1);
     }
     // give each widget a name field
     widgets[widgetName].name = widgetName;

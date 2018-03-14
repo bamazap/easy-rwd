@@ -30,19 +30,23 @@ function widthV1(layout, widthAvailable) {
 // does a simple left to right, row by row approach
 function layoutV1(parent, widthAvailable, widthAlg = widthV1) {
   const layout = new Layout(parent.children, widthAlg);
-  let x = 0;
+  let thisRowWidth = 0;
   let lastRow = [];
   let thisRow = [];
   parent.children.forEach((child) => {
-    if (x + child.width[0][0] >= widthAvailable) {
-      x = 0;
+    const childMinWidth = range.rangeMin(child.width);
+    if (thisRowWidth + childMinWidth >= widthAvailable) {
+      thisRowWidth = 0;
       lastRow = thisRow;
       thisRow = [];
     } else {
-      layout.addRight(thisRow[thisRow.length - 1], child.id);
+      thisRowWidth += childMinWidth;
+      if (thisRow.length > 0) {
+        layout.addRight(thisRow[thisRow.length - 1], child.localID);
+      }
     }
-    thisRow.push(child.id);
-    lastRow.forEach(widgetID => layout.addBelow(widgetID, child.id));
+    thisRow.push(child.localID);
+    lastRow.forEach(widgetID => layout.addBelow(widgetID, child.localID));
   });
   return layout;
 }
