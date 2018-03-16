@@ -51,12 +51,12 @@ function copyObject(obj) {
 }
 
 // checks if two objects have the same key-value pairs
-// equality for keys and values uses ===
-function objectsEqual(obj1, obj2) {
+//   eqFn is used to compare values (default is ===)
+function objectsEqual(obj1, obj2, eqFn = (a, b) => a === b) {
   const keys1 = Object.keys(obj1);
   const keys2 = Object.keys(obj2);
   if (keys1.length !== keys2.length) return false;
-  return keys1.reduce((eq, key) => eq && obj1[key] === obj2[key]);
+  return keys1.reduce((eq, key) => eq && eqFn(obj1[key], obj2[key]));
 }
 
 // returns a new object which is a copy of extendObj
