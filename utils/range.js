@@ -1,4 +1,4 @@
-const utils = require('./utils');
+const arrUtils = require('./array-utils');
 
 // a range is an array of segments
 //   where segment i (Si) and segment i+1 (Sj) satisfy Si[1] < Sj[0]
@@ -22,7 +22,7 @@ function segmentsOverlap(segment1, segment2) {
 function unionSegments(segment1, segment2) {
   return [
     Math.min(segment1[0], segment2[0]),
-    Math.max(segment1[1], segment2[2]),
+    Math.max(segment1[1], segment2[1]),
   ];
 }
 
@@ -76,8 +76,8 @@ function unionRanges(range1, range2) {
 //   max(a, b)  where a in range 1 and b in range 2
 function maxRanges(range1, range2) {
   return unionRanges(
-    clipRange(range1, range2[0][0], Infinity),
-    clipRange(range2, range1[0][0], Infinity)
+    clipRange(range1, rangeMin(range2), Infinity),
+    clipRange(range2, rangeMin(range1), Infinity)
   );
 }
 
@@ -118,7 +118,7 @@ function addRanges(range1, range2) {
 
 function rangeForEach(range, f) {
   range.forEach(([a, b]) => {
-    utils.range(a, b).forEach(f);
+    arrUtils.range(a, b).forEach(f);
   });
 }
 
@@ -141,7 +141,7 @@ function rangeIn(range, i) {
 // if i is smaller than the smallest value s in range, return s
 function rangeFloor(range, i) {
   let ans = null;
-  utils.forEachReverse(range, ([a, b]) => {
+  arrUtils.forEachReverse(range, ([a, b]) => {
     if (i > b) {
       ans = b;
     } else if (i >= a && i <= b) {

@@ -1,6 +1,7 @@
 const graphlib = require('graphlib');
 
-const utils = require('./utils');
+const { wrap } = require('./utils/object-utils');
+const Counter = require('./utils/counter');
 
 // returns an array of the names of the widgets that are not children
 function getPages(widgets) {
@@ -36,7 +37,7 @@ function topologicallySort(widgets) {
 // new objects maintain a view of original widget objects
 function uniqifyLocally(widgets) {
   const newWidgets = {};
-  const counter = new utils.Counter();
+  const counter = new Counter();
   topologicallySort(widgets).forEach((widgetName) => {
     // set localID for each child
     const children = widgets[widgetName].children.map((child) => {
@@ -50,7 +51,7 @@ function uniqifyLocally(widgets) {
       children,
       localID: `${widgetName}-0`,
     };
-    newWidgets[widgetName] = utils.wrap(widgets[widgetName], newProps);
+    newWidgets[widgetName] = wrap(widgets[widgetName], newProps);
     counter.reset(); // only care about numbering within each child array
   });
   return newWidgets;
@@ -60,10 +61,10 @@ function uniqifyLocally(widgets) {
 //   unique objects with unique 'globalID' values
 // unique widget objects maintain views of their original widget objects
 function uniqifyGlobally(widget, counter) {
-  const counts = counter === undefined ? new utils.Counter() : counter;
+  const counts = counter === undefined ? new Counter() : counter;
   const globalID = `${widget.name}-${counts.count(widget.name)}`;
   const children = widget.children.map(child => uniqifyGlobally(child, counts));
-  return utils.wrap(widget, { globalID, children });
+  return wrap(widget, { globalID, children });
 }
 
 module.exports = {

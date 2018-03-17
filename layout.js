@@ -1,7 +1,10 @@
 const graphlib = require('graphlib');
 
-const utils = require('./utils');
-const range = require('./range');
+const arrUtils = require('./utils/array-utils');
+const range = require('./utils/range');
+const Breakpoints = require('./utils/breakpoints');
+
+const maxScreenWidth = 1920;
 
 class Layout {
   constructor(widgetArr, widthAlg) {
@@ -14,6 +17,8 @@ class Layout {
     this.widthAlg = widthAlg;
 
     this.widthMemo = null;
+    this.widthAssignmentsMemo = null;
+    this.maximumWidth = null;
 
     // add nodes to the graphs representing widgets
     widgetArr.forEach((widget) => {
@@ -51,12 +56,14 @@ class Layout {
   // add a widget B is on the right of widget A relation
   addRight(onLeft, onRight) {
     this.widthMemo = null;
+    this.widthAssignmentsMemo = null;
     this.right.setEdge(onLeft, onRight);
   }
 
   // add a widget B is below widget A relation
   addBelow(above, below) {
     this.widthMemo = null;
+    this.widthAssignmentsMemo = null;
     this.down.setEdge(above, below);
   }
 
@@ -70,9 +77,34 @@ class Layout {
     return this.widthMemo;
   }
 
+  // returns an array of [minWidth, widthAssignments] pairs
+  get widthAssignments() {
+    if (this.widthAssignmentsMemo !== null) {
+      return this.widthAssignmentsMemo;
+    }
+
+    this.widthAssignmentsMemo = this.widthAlg(
+      this.right,
+      this.widgetsByLocalID,
+      this.calculateWidth()
+    );
+    return this.widthAssignmentsMemo;
+  }
+
+  get maxWidth() {
+    return this.maximumWidth;
+  }
+
+  set maxWidth(maxWidth) {
+    this.widthMemo = null;
+    this.widthAssignmentsMemo = null;
+    this.maximumWidth = maxWidth;
+  }
+
   // calculates the height of the layout for a given width
   height(width) {
-    const widthAssignments = this.widthAlg(this, width);
+    const widthAssignments = this.widthAssignments.find(width).data;
+
     const heightOfWidget = localID => this.widgetsByLocalID[localID]
       .height(widthAssignments[localID]);
 
@@ -122,9 +154,12 @@ class Layout {
 
     // call the recursive function on all widgets on the far left
     // and determine the range of possible overall widths
-    return this.right.sources()
+    const width = this.right.sources()
       .map(localID => recursiveStep(localID))
-      .reduce((maxWidth, width) => range.maxRanges(maxWidth, width));
+      .reduce((maxWidth, w) => {
+        return range.maxRanges(maxWidth, w)
+      });
+    return range.clipRange(width, Number.NEGATIVE_INFINITY, this.maxWidth);
   }
 
   toString() {
@@ -143,28 +178,27 @@ class Layout {
 // creates layouts with breakpoints for a widget
 // ouput is a ResponsiveLayout: array of number, Layout pairs
 //   the number specifies the minimum width for which the layout is valid
-function createLayouts(widget, layoutAlg) {
-  const responsiveLayout = [];
+function createLayouts(widget, layoutAlg, widthAlg) {
+  const responsiveLayout = new Breakpoints(true);
   let lastLayout = null;
-  let newLayout = null;
-  utils.range(1921).forEach((i) => {
-    newLayout = layoutAlg(widget, i);
+  arrUtils.range(maxScreenWidth + 1).forEach((i) => {
+    const newLayout = layoutAlg(widget, i, widthAlg);
     if (lastLayout === null || !newLayout.equals(lastLayout)) {
-      console.log(newLayout.toString());
+      if (lastLayout !== null) lastLayout.maxWidth = i - 1;
       lastLayout = newLayout;
-      responsiveLayout.push([i, newLayout]);
+      responsiveLayout.add(i, newLayout);
     }
   });
   return responsiveLayout;
 }
 
-// given a layouts array (of [minWidth, Layout] length-2 arrays)
+// given a layout breakpoints
 // return a single width range which contains its possible widths
 function widthOfLayouts(layouts) {
   return layouts
-    .map(([minWidth, layout], i) => {
-      const maxWidth = i + 1 < layouts.width ? layouts[i][0] - 1 : Infinity;
-      return range.clipRange(layout.calculateWidth(), minWidth, maxWidth);
+    .map((bp) => {
+      const maxWidth = bp.next ? bp.next.minValue - 1 : Infinity;
+      return range.clipRange(bp.data.calculateWidth(), bp.minValue, maxWidth);
     })
     .reduce((totalWidth, width) => range.unionRanges(totalWidth, width));
 }
@@ -173,22 +207,21 @@ function widthOfLayouts(layouts) {
 // return a range function which maps each value in the width range to a height
 // can optionally provide the width range to save computation
 function heightOfLayouts(layouts, widthR) {
-  const width = widthR === undefined ? widthOfLayouts(widthR) : widthR;
-  let layoutIdx = 0;
-  const heights = [];
+  const width = widthR === undefined ? widthOfLayouts(layouts) : widthR;
+  const responsiveHeight = new Breakpoints(true);
+  let breakpoint = layouts.find(range.rangeMin(width));
   let lastHeight = null;
   range.rangeForEach(width, (w) => {
-    if (layoutIdx + 1 < layouts.length && w >= layouts[layoutIdx + 1][0]) {
-      layoutIdx += 1;
+    while (breakpoint.next && breakpoint.next.minValue <= w) {
+      breakpoint = breakpoint.next;
     }
-    const layout = layouts[layoutIdx][1];
-    const height = layout.height(w);
-    if (lastHeight === null || lastHeight !== height) {
-      lastHeight = height;
-      heights.push([w, height]);
+    const newHeight = breakpoint.data.height(w);
+    if (lastHeight === null || lastHeight !== newHeight) {
+      lastHeight = newHeight;
+      responsiveHeight.add(w, newHeight);
     }
   });
-  return w => heights.filter(([minW, _h]) => w >= minW).reverse()[0][1];
+  return w => responsiveHeight.find(w).data;
 }
 
 module.exports = {

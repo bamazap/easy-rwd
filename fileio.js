@@ -1,7 +1,7 @@
 const find = require('find');
 const fs = require('fs-extra');
 
-const utils = require('./utils');
+const { exit, allTrue } = require('./utils/utils');
 
 const reservedNames = ['head', 'erwd-widget', 'erwd-children'];
 
@@ -10,7 +10,7 @@ function readWidgets(file) {
   const widgets = JSON.parse(fs.readFileSync(file, 'utf8'));
   Object.keys(widgets).forEach((widgetName) => {
     if (reservedNames.indexOf(widgetName) !== -1) {
-      utils.exit(`Widget called ${widgetName} uses reserved name`, 1);
+      exit(`Widget called ${widgetName} uses reserved name`, 1);
     }
     // give each widget a name field
     widgets[widgetName].name = widgetName;
@@ -41,10 +41,10 @@ function parseSizeComment(sizeComment) {
   const sizeObj = JSON.parse(sizeJSON);
 
   // helper function to check if all elements of an array are numbers
-  const allNumbers = arr => utils.allTrue(arr, x => typeof x === 'number');
+  const allNumbers = arr => allTrue(arr, x => typeof x === 'number');
   // helper function to fail if size comment isn't correctly formatted
   const failBadSizeComment = () => {
-    utils.exit(`Badly formatted size comment: ${sizeComment}`, 1);
+    exit(`Badly formatted size comment: ${sizeComment}`, 1);
   };
 
   // width should be an array of arrays of numbers
@@ -54,7 +54,7 @@ function parseSizeComment(sizeComment) {
   } else if (sizeObj.width.length === 2 && allNumbers(sizeObj.width)) {
     // shorthand: allow a single array of numbers for continuous width range
     sizeObj.width = [sizeObj.width];
-  } else if (!utils.allTrue(sizeObj.width, allNumbers)) {
+  } else if (!allTrue(sizeObj.width, allNumbers)) {
     failBadSizeComment();
   }
 

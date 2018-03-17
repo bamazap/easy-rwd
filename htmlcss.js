@@ -70,7 +70,7 @@ function longestPathDAG(dag) {
 function widgetCSS(widget, scale) {
   if (!widget.layouts) return '';
   let css = '';
-  widget.layouts.forEach(([minWidth, layout]) => {
+  widget.layouts.forEach(({ minValue: minWidth, data: layout }) => {
     css += `@media only screen and (min-width: ${minWidth * scale}px) {\n`;
     // assign child widgets to cells
     const colNumbers = longestPathDAG(layout.right);

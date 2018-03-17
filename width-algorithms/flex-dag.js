@@ -1,7 +1,8 @@
-const utils = require('./utils');
-const range = require('./range');
+const { objectsEqual, sum } = require('../utils/utils');
+const range = require('../utils/range');
+const Breakpoints = require('../utils/breakpoints');
 
-// returns string[][]
+// returns Breakpoints (singleton)
 function sourceToSinkPaths(dag) {
   const recursiveStep = (node) => {
     const successors = dag.successors(node);
@@ -17,7 +18,7 @@ function approxEqual(a, b, maxDiff = 0.0001) {
 }
 
 function fracsEqual(f1, f2) {
-  return utils.objectsEqual(f1, f2, approxEqual);
+  return objectsEqual(f1, f2, approxEqual);
 }
 
 const maxIter = 10000;
@@ -42,7 +43,7 @@ function flexDAG(dag, widgets, parentWidthRange, userGrows = {}) {
   });
 
   // precalculate sums of grow values for each leg
-  const legGrowTotals = legs.map(l => utils.sum(l.map(w => grows[w])));
+  const legGrowTotals = legs.map(l => sum(l.map(w => grows[w])));
 
   // arguments
   // prevFracs: Fracs -- used as starting place
@@ -58,7 +59,7 @@ function flexDAG(dag, widgets, parentWidthRange, userGrows = {}) {
       newFracs[widgetName] = 1;
     });
     legs.forEach((leg, i) => {
-      const fracLeft = 1 - utils.sum(leg.map((w) => {
+      const fracLeft = 1 - sum(leg.map((w) => {
         if (prevFracs[w] > 1) return 0;
         return prevFracs[w];
       }));
@@ -91,11 +92,10 @@ function flexDAG(dag, widgets, parentWidthRange, userGrows = {}) {
   });
 
   // quickly get an estimte of percent widths, ignoring width ranges
-  let fracs = expand(minFracs, (_, widgetFrac) => widgetFrac);
   let lastFracs = null;
 
   // a breakpoint is needed for edge/discontinuity in width range
-  const breakpoints = [];
+  const breakpoints = new Breakpoints(true);
   range.rangeForEach(parentWidthRange, (parentWidth) => {
     // percent width limits depend on width of parent
     const limitFn = (widgetName, widgetFrac) => {
@@ -103,16 +103,14 @@ function flexDAG(dag, widgets, parentWidthRange, userGrows = {}) {
       if (range.rangeIn(widgets[widgetName].width, width)) return widgetFrac;
       return range.rangeFloor(widgets[widgetName].width, width);
     };
-    fracs = expand(minFracs, limitFn);
-    if (lastFracs === null || !fracsEqual(lastFracs, fracs)) {
-      breakpoints.push([parentWidth, fracs]);
-      lastFracs = fracs;
+    const newFracs = expand(minFracs, limitFn);
+    if (lastFracs === null || !fracsEqual(lastFracs, newFracs)) {
+      breakpoints.add(parentWidth, newFracs);
+      lastFracs = newFracs;
     }
   });
 
   return breakpoints;
 }
 
-module.exports = {
-  flexDAG,
-};
+module.exports = flexDAG;
