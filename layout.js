@@ -18,7 +18,7 @@ class Layout {
 
     this.widthMemo = null;
     this.widthAssignmentsMemo = null;
-    this.maximumWidth = null;
+    this.maximumWidth = Infinity;
 
     // add nodes to the graphs representing widgets
     widgetArr.forEach((widget) => {
@@ -86,7 +86,7 @@ class Layout {
     this.widthAssignmentsMemo = this.widthAlg(
       this.right,
       this.widgetsByLocalID,
-      this.calculateWidth()
+      this.width
     );
     return this.widthAssignmentsMemo;
   }
@@ -156,10 +156,8 @@ class Layout {
     // and determine the range of possible overall widths
     const width = this.right.sources()
       .map(localID => recursiveStep(localID))
-      .reduce((maxWidth, w) => {
-        return range.maxRanges(maxWidth, w)
-      });
-    return range.clipRange(width, Number.NEGATIVE_INFINITY, this.maxWidth);
+      .reduce((maxWidth, w) => range.maxRanges(maxWidth, w));
+    return range.clipRange(width, Number.NEGATIVE_INFINITY, this.maximumWidth);
   }
 
   toString() {

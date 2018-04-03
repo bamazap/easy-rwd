@@ -74,7 +74,9 @@ class Breakpoints {
   forEach(f) {
     let bp = this.skipSentinel === true ? this.rep.head.next : this.rep.head;
     while (bp !== null) {
-      if (bp.minValue > Number.NEGATIVE_INFINITY) f(bp);
+      if (bp.minValue > Number.NEGATIVE_INFINITY) {
+        f(bp, bp.next ? bp.next.minValue : Infinity);
+      }
       bp = bp.next;
     }
   }

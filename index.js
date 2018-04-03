@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 const fileio = require('./fileio');
 const widgetUtils = require('./widgets');
-const htmlcss = require('./htmlcss');
 const layoutUtils = require('./layout');
+const buildPageHTML = require('./html');
+const buildPageCSS = require('./css');
 
 function build(file, layoutAlg, widthAlg) {
   // read & process inputs
@@ -24,8 +25,8 @@ function build(file, layoutAlg, widthAlg) {
   // output CSS and HTML for each top-level (page) widget
   widgetUtils.getPages(widgets).forEach((pageName) => {
     const page = widgetUtils.uniqifyGlobally(widgets[pageName]);
-    const html = htmlcss.pageHTML(page, appName, head);
-    const css = htmlcss.pageCSS(page) + userStyles;
+    const html = buildPageHTML(page, appName, head);
+    const css = `${buildPageCSS(page)}\n${userStyles}`;
     fileio.writeOut(pageName, html, css);
   });
 }

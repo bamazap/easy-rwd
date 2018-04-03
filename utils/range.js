@@ -72,6 +72,18 @@ function unionRanges(range1, range2) {
   return union;
 }
 
+// returns the smallest value in the range
+function rangeMin(range) {
+  if (range.length === 0) return null;
+  return range[0][0];
+}
+
+// returns the largest value in the range
+function rangeMax(range) {
+  if (range.length === 0) return null;
+  return range[range.length - 1][1];
+}
+
 // returns a new range which contains all possible values of
 //   max(a, b)  where a in range 1 and b in range 2
 function maxRanges(range1, range2) {
@@ -120,16 +132,6 @@ function rangeForEach(range, f) {
   range.forEach(([a, b]) => {
     arrUtils.range(a, b).forEach(f);
   });
-}
-
-// returns the smallest value in the range
-function rangeMin(range) {
-  return range[0][0];
-}
-
-// returns the largest value in the range
-function rangeMax(range) {
-  return range[range.length - 1][1];
 }
 
 // returns true if i is in range false otherwise
