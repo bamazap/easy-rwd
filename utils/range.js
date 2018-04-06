@@ -53,7 +53,7 @@ function unionRanges(range1, range2) {
         j += 1;
       }
       union.push(overlap);
-    } else if (range1[i][0] <= range2[i][0]) {
+    } else if (range1[i][0] <= range2[j][0]) {
       union.push(range1[i].slice(0));
       i += 1;
     } else {
@@ -97,8 +97,8 @@ function maxRanges(range1, range2) {
 //   min(a, b)  where a in range 1 and b in range 2
 function minRanges(range1, range2) {
   return unionRanges(
-    clipRange(range1, Number.NEGATIVE_INFINITY, range2[1][1]),
-    clipRange(range2, Number.NEGATIVE_INFINITY, range1[1][1])
+    clipRange(range1, Number.NEGATIVE_INFINITY, rangeMax(range2)),
+    clipRange(range2, Number.NEGATIVE_INFINITY, rangeMax(range1))
   );
 }
 

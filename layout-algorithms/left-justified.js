@@ -14,11 +14,10 @@ function leftJustified(parent, widthAvailable, widthAlg) {
       thisRowWidth = 0;
       lastRow = thisRow;
       thisRow = [];
-    } else {
-      thisRowWidth += childMinWidth;
-      if (thisRow.length > 0) {
-        layout.addRight(thisRow[thisRow.length - 1], child.localID);
-      }
+    }
+    thisRowWidth += childMinWidth;
+    if (thisRow.length > 0) {
+      layout.addRight(thisRow[thisRow.length - 1], child.localID);
     }
     thisRow.push(child.localID);
     lastRow.forEach(widgetID => layout.addBelow(widgetID, child.localID));

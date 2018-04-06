@@ -31,7 +31,8 @@ function pageHTML(page, appName, head) {
   <head>
     <meta charset="utf-8">
     <title>${appName} | ${page.name}</title>
-    <meta name="viewport" content="width=device-width">
+    <meta name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="${page.name}.css?v=1.0">
     ${head}
   </head>

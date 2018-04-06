@@ -196,7 +196,7 @@ function widthOfLayouts(layouts) {
   return layouts
     .map((bp) => {
       const maxWidth = bp.next ? bp.next.minValue - 1 : Infinity;
-      return range.clipRange(bp.data.calculateWidth(), bp.minValue, maxWidth);
+      return range.clipRange(bp.data.width, bp.minValue, maxWidth);
     })
     .reduce((totalWidth, width) => range.unionRanges(totalWidth, width));
 }

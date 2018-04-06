@@ -26,7 +26,7 @@ function build(file, layoutAlg, widthAlg) {
   widgetUtils.getPages(widgets).forEach((pageName) => {
     const page = widgetUtils.uniqifyGlobally(widgets[pageName]);
     const html = buildPageHTML(page, appName, head);
-    const css = `${buildPageCSS(page)}\n${userStyles}`;
+    const css = `${userStyles}\n${buildPageCSS(page)}`;
     fileio.writeOut(pageName, html, css);
   });
 }
