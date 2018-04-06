@@ -1,27 +1,36 @@
-function baseHTML(id, className, innerHTML) {
-  return `<div id="${id}" class="erwd-widget ${className}">
-  ${innerHTML}
-</div>\n`;
+const oneIndent = '  ';
+
+// TODO: Remove extra indentation on first line of each child widget.
+function indentHTML(html, numIndents = 1) {
+  const indent = oneIndent.repeat(numIndents);
+  return `${indent}${html.replace(/(?:\r\n|\r|\n)/g, `\n${indent}`)}`;
 }
 
-function generatedHTML(id, className, innerHTML) {
-  return `<div id="${id}" class="erwd-widget ${className}">
+function baseHTML(id, className, innerHTML) {
+  return indentHTML(`<div id="${id}" class="erwd-widget ${className}">
+${indentHTML(innerHTML)}
+</div>\n`);
+}
+
+function generatedHTML(id, className, innerHTML, numIndents = 0) {
+  return indentHTML(`<div id="${id}" class="erwd-widget ${className}">
   <div class="erwd-children">
-    ${innerHTML}
+${indentHTML(innerHTML.replace(/\s*$/, ''), 1)}
   </div>
-</div>\n`;
+</div>\n`);
 }
 
 // concatenates the html of the widget's children and returns it
 // or returns the value of the html field for a base widget
-function buildWidgetHTML(widget) {
+function buildWidgetHTML(widget, numIndents = 0) {
+  const className = `${widget.name} ${widget.localID}`;
   if (widget.html !== undefined) {
-    return baseHTML(widget.globalID, widget.name, widget.html);
+    return baseHTML(widget.globalID, className, widget.html);
   }
   const innerHTML = widget.children
-    .map(child => buildWidgetHTML(child))
-    .reduce((a, b) => a + b);
-  return generatedHTML(widget.globalID, widget.name, innerHTML);
+    .map(child => buildWidgetHTML(child, 1))
+    .reduce((a, b) => `${a}\n${b}`);
+  return generatedHTML(widget.globalID, className, innerHTML, 1);
 }
 
 // builds and returns HTML for a page (a page is just a widget object)
@@ -37,9 +46,8 @@ function pageHTML(page, appName, head) {
     ${head}
   </head>
   <body style="margin:0;">
-    ${buildWidgetHTML(page)}
-  </body>
-</html>`;
+${indentHTML(buildWidgetHTML(page), 1).slice(0, -oneIndent.length)}</body>
+</html>`.replace(/(?:\r\n|\r|\n)\s*(?:\r\n|\r|\n)/g, `\n\n`);
 }
 
 module.exports = pageHTML;

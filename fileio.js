@@ -78,10 +78,10 @@ function readHTML() {
   find.fileSync(/\.htm[l]?$/, `${'.'}/src`).forEach((file) => {
     let name = file.substr(file.lastIndexOf('/') + 1);
     name = name.substr(0, name.lastIndexOf('.'));
-    const fileContent = fs.readFileSync(file, 'utf8');
+    const fileContent = fs.readFileSync(file, 'utf8').trim();
     // first line of file is special size comment
     const sizeComment = fileContent.substr(0, fileContent.indexOf('\n'));
-    const html = fileContent.substr(fileContent.indexOf('\n'));
+    const html = fileContent.substr(fileContent.indexOf('\n') + 1);
     const sizeObj = parseSizeComment(sizeComment);
     const widget = {
       width: sizeObj.width,
