@@ -3,10 +3,6 @@ const graphlib = require('graphlib');
 const CSSBuilder = require('./utils/css-builder');
 const { rangeMin, rangeMax } = require('./utils/range');
 
-function mediaQuery(minWidth) {
-  return `@media only screen and (min-width: ${minWidth}px)`;
-}
-
 function longestPathDAG(dag) {
   const pathLengths = {};
   const recursiveStep = (node) => {
@@ -62,7 +58,7 @@ function widgetCSS(widget, scale = 1, css = new CSSBuilder()) {
       });
     });
     // css for cell assignments
-    const cssLayBP = css.nestedStatement(mediaQuery(layoutMinWidth * scale));
+    const cssLayBP = css.mediaQuery(layoutMinWidth * scale);
     widget.children.forEach((child) => {
       const selector = `#${child.globalID}`;
       cssLayBP.addRule(selector, 'grid-column', colNumbers[child.localID] + 1);
@@ -70,7 +66,7 @@ function widgetCSS(widget, scale = 1, css = new CSSBuilder()) {
     });
     // css for width assignments
     layout.widthAssignments.forEach(({ minValue: mw, data: w }) => {
-      const cssWidthBP = css.nestedStatement(mediaQuery(mw * scale));
+      const cssWidthBP = css.mediaQuery(mw * scale);
       widget.children.forEach((child) => {
         let width = w[child.localID];
         let unit = 'px';

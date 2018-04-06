@@ -1,9 +1,13 @@
+// class for building CSS files.
 class CSSBuilder {
   constructor(indent = '  ') {
     this.indent = indent;
     this.rules = {};
-    this.nestedStatements = {};
-    // TODO: support other at-rules
+    this.mediaQueries = {};
+  }
+
+  static mediaQueryString(minWidth) {
+    return `@media only screen and (min-width: ${minWidth}px)`;
   }
 
   addRule(selector, property, value) {
@@ -13,11 +17,12 @@ class CSSBuilder {
     this.rules[selector][property] = value;
   }
 
-  nestedStatement(condition) {
-    if (!({}).hasOwnProperty.call(this.nestedStatements, condition)) {
-      this.nestedStatements[condition] = new CSSBuilder();
+  // only min-width (px) media queries are supported
+  mediaQuery(minWidth) {
+    if (!({}).hasOwnProperty.call(this.mediaQueries, minWidth)) {
+      this.mediaQueries[minWidth] = new CSSBuilder(this.indent);
     }
-    return this.nestedStatements[condition];
+    return this.mediaQueries[minWidth];
   }
 
   toString(numIndents = 0) {
@@ -27,11 +32,15 @@ class CSSBuilder {
         `${baseIndent + this.indent}${prop}: ${val};`).join('\n');
       return `${baseIndent}${sel} {\n${declCSS}\n${baseIndent}}`;
     }).join('\n\n');
-    const nsCSS = Object.entries(this.nestedStatements).map(([cond, cssB]) => {
-      const nestedCSS = cssB.toString(numIndents + 1);
-      return `${baseIndent}${cond} {\n${nestedCSS}${baseIndent}}`;
-    }).join('\n\n');
-    return `${rulesCSS}\n${nsCSS ? '\n' : ''}${nsCSS}`;
+    const mqCSS = Object.entries(this.mediaQueries)
+      .sort(([mwA, _1], [mwB, _2]) => mwA - mwB)
+      .map(([minWidth, cssBuilder]) => {
+        const nestedCSS = cssBuilder.toString(numIndents + 1);
+        const condition = CSSBuilder.mediaQueryString(minWidth);
+        return `${baseIndent}${condition} {\n${nestedCSS}${baseIndent}}`;
+      })
+      .join('\n\n');
+    return `${rulesCSS}\n${mqCSS ? '\n' : ''}${mqCSS}`;
   }
 }
 
