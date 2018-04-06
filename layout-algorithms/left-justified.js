@@ -10,7 +10,7 @@ function leftJustified(parent, widthAvailable, widthAlg) {
   let thisRow = [];
   parent.children.forEach((child) => {
     const childMinWidth = range.rangeMin(child.width);
-    if (thisRowWidth + childMinWidth >= widthAvailable) {
+    if (thisRowWidth + childMinWidth > widthAvailable) {
       thisRowWidth = 0;
       lastRow = thisRow;
       thisRow = [];
