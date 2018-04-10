@@ -1,4 +1,4 @@
-const { objectsEqual, sum } = require('../utils/utils');
+const { objectsEqual } = require('../utils/object-utils');
 const range = require('../utils/range');
 const Breakpoints = require('../utils/breakpoints');
 
@@ -13,14 +13,18 @@ function sourceToSinkPaths(dag) {
   return [].concat(...dag.sources().map(recursiveStep));
 }
 
-function approxEqual(a, b, maxDiff = 0.0001) {
+function add(a, b) {
+  return a + b;
+}
+
+function approxEqual(a, b, maxDiff = 0.00001) {
   return Math.abs(a - b) < maxDiff;
 }
 
 function fracsEqual(f1, f2) {
-  return objectsEqual(f1, f2, approxEqual);
+  return objectsEqual(f1, f2, ([a, x], [b, y]) =>
+    approxEqual(a, b) && approxEqual(x, y));
 }
-
 const maxIter = 10000;
 
 // dag is a instance of Graph from graphlib
@@ -43,67 +47,72 @@ function flexDAG(dag, widgets, parentWidthRange, userGrows = {}) {
   });
 
   // precalculate sums of grow values for each leg
-  const legGrowTotals = legs.map(l => sum(l.map(w => grows[w])));
+  const legGrowTotals = legs.map(l => l.map(w => grows[w]).reduce(add));
 
   // arguments
   // prevFracs: Fracs -- used as starting place
-  // limitFn: (widgetName: string, widgetFrac: number) => number
-  //   used to keep widget widths in their valid range
+  // parentWidth: Number -- horizontal space (px) available
   // iter: number -- depth of recursion, will not pass maxIter
   // returns
   // newFracs: Fracs -- new percent widths for widgets
-  const expand = (prevFracs, limitFn, iter = 0) => {
+  const expand = (prevFracs, parentWidth, iter = 0) => {
     if (iter >= maxIter) return prevFracs;
     const newFracs = {};
-    widgetNames.forEach((widgetName) => {
-      newFracs[widgetName] = 1;
-    });
-    legs.forEach((leg, i) => {
-      const fracLeft = 1 - sum(leg.map((w) => {
-        if (prevFracs[w] > 1) return 0;
-        return prevFracs[w];
-      }));
-      leg.forEach((widgetName) => {
-        if (prevFracs[widgetName] > 1) {
-          newFracs[widgetName] = prevFracs[widgetName];
-          return;
+    legs.forEach((leg) => {
+      // don't expand widgets with fixed pixel widths
+      const fixedWidgets = leg.filter(n => prevFracs[n][0] > 1);
+      fixedWidgets.forEach((widgetName) => {
+        newFracs[widgetName] = prevFracs[widgetName];
+      });
+      // expand widgets with fractional widths < 1
+      const growWidgets = leg.filter(n => prevFracs[n][0] <= 1);
+      growWidgets.forEach((widgetName) => {
+        newFracs[widgetName] = [1, 0];
+      });
+      const fixedSpace = fixedWidgets.map(n => prevFracs[n][0]).reduce(add, 0);
+      const legGrowTotal = growWidgets.map(n => grows[n]).reduce(add, 0);
+      growWidgets.forEach((widgetName) => {
+        // grow by shrinking from 100%
+        // if a widget is in two legs, this avoids overallocating
+        // fixed space is tracked to aid CSS ouput
+        newFracs[widgetName] = [
+          Math.min(
+            grows[widgetName] / legGrowTotal,
+            newFracs[widgetName][0]
+          ),
+          Math.max(fixedSpace, newFracs[widgetName][1])
+        ];
+        // clip widgets to fixed sizes if they exceed their width range
+        const pxWidth = newFracs[widgetName][0] * (parentWidth - fixedSpace);
+        // round to be robust to floating point arithmetic
+        if (!range.rangeIn(widgets[widgetName].width, Math.round(pxWidth))) {
+          newFracs[widgetName] = [
+            range.rangeFloor(widgets[widgetName].width, pxWidth),
+            0
+          ];
         }
-        const growRatio = grows[widgetName] / legGrowTotals[i];
-        newFracs[widgetName] = Math.min(
-          prevFracs[widgetName] + (fracLeft * growRatio),
-          newFracs[widgetName]
-        );
-        newFracs[widgetName] = limitFn(widgetName, newFracs[widgetName]);
       });
     });
     if (fracsEqual(prevFracs, newFracs)) {
       return newFracs;
     }
-    return expand(newFracs, limitFn, iter + 1);
+    return expand(newFracs, parentWidth, iter + 1);
   };
 
   // calculate minimum possible percent widths based on minimums of width ranges
   // we assume any valid layout can at least fit all children at min width
   const minFracs = {};
-  const minParentWidth = range.rangeMin(parentWidthRange);
+  const maxParentWidth = range.rangeMax(parentWidthRange);
   dag.nodes().forEach((widgetName) => {
     const minChildWidth = range.rangeMin(widgets[widgetName].width);
-    minFracs[widgetName] = minChildWidth / minParentWidth;
+    minFracs[widgetName] = [minChildWidth / maxParentWidth, 0];
   });
-
-  // quickly get an estimte of percent widths, ignoring width ranges
-  let lastFracs = null;
 
   // a breakpoint is needed for edge/discontinuity in width range
   const breakpoints = new Breakpoints(true);
+  let lastFracs = null;
   range.rangeForEach(parentWidthRange, (parentWidth) => {
-    // percent width limits depend on width of parent
-    const limitFn = (widgetName, widgetFrac) => {
-      const width = widgetFrac * parentWidth;
-      if (range.rangeIn(widgets[widgetName].width, width)) return widgetFrac;
-      return range.rangeFloor(widgets[widgetName].width, width);
-    };
-    const newFracs = expand(minFracs, limitFn);
+    const newFracs = expand(minFracs, parentWidth);
     if (lastFracs === null || !fracsEqual(lastFracs, newFracs)) {
       breakpoints.add(parentWidth, newFracs);
       lastFracs = newFracs;

@@ -18,6 +18,19 @@ function exit(msg, code = 0) {
   process.exit(code);
 }
 
+
+function round(number, precision) {
+  const shift = function (number, precision, reverseShift) {
+    if (reverseShift) {
+      precision = -precision;
+    }  
+    numArray = ("" + number).split("e");
+    return +(numArray[0] + "e" + (numArray[1] ? (+numArray[1] + precision) : precision));
+  };
+  return shift(Math.round(shift(number, precision, false)), precision, true);
+}
+
+
 module.exports = {
   exit,
   range,
