@@ -26,6 +26,27 @@ function longestPathDAG(dag) {
   return pathLengths;
 }
 
+function cellAssignments(layout, widgets) {
+  // assign child widgets to cells
+  const colNumbers = longestPathDAG(layout.right);
+  const rowNumbers = longestPathDAG(layout.down);
+  // resolve cell conflicts by shifting down
+  widgets.forEach((child1) => {
+    widgets.forEach((child2) => {
+      if (
+        child1.localID !== child2.localID &&
+        colNumbers[child1.localID] === colNumbers[child2.localID] &&
+        rowNumbers[child1.localID] === rowNumbers[child2.localID]
+      ) {
+        graphlib.alg.preorder(layout.down, child2.localID).forEach((lID) => {
+          rowNumbers[lID] += 1;
+        });
+      }
+    });
+  });
+  return { colNumbers, rowNumbers };
+}
+
 // generates the non-responsive CSS for a page
 function basePageCSS(page) {
   const css = new CSSBuilder();
@@ -42,10 +63,10 @@ function basePageCSS(page) {
   return css;
 }
 
-// TODO: this is the whitespace hack which should be eventually fixed
+// TODO: this is the "whitespace hack" which should be eventually fixed
 // we need to properly use column spanning to prevent unneeded whitespace
 // for now, rescale breakpoints to actual width of displayed layout
-const actualWidth = (colNumbers, minimumWidth, widthAssignments) => {
+function actualWidth(colNumbers, minimumWidth, widthAssignments) {
   const colWidths = new Array(Math.max(...Object.values(colNumbers)));
   Object.entries(colNumbers).forEach(([localID, c]) => {
     const width = widthAssignments[localID][0];
@@ -55,39 +76,44 @@ const actualWidth = (colNumbers, minimumWidth, widthAssignments) => {
   return colWidths.reduce((a, b) => a + b, 0);
 }
 
+// rounds x to number of decimal places specified by precision
+// there are some caveats with this, but it works for css output purposes
+function round(x) {
+  return parseFloat(x.toFixed(precision));
+}
+
 // generates the responsive CSS for a widget
 // scale is used because breakpoints are based on parent size
 //   but CSS currently only supports page size
-function widgetCSS(widget, scale = 1, css = new CSSBuilder()) {
-  if (!widget.layouts) return '';
-  widget.layouts.forEach(({ minValue: layoutMinWidth, data: layout }) => {
-    // assign child widgets to cells
-    const colNumbers = longestPathDAG(layout.right);
-    const rowNumbers = longestPathDAG(layout.down);
-    // resolve cell conflicts by shifting down
-    widget.children.forEach((child1) => {
-      widget.children.forEach((child2) => {
-        if (
-          child1.localID !== child2.localID &&
-          colNumbers[child1.localID] === colNumbers[child2.localID] &&
-          rowNumbers[child1.localID] === rowNumbers[child2.localID]
-        ) {
-          graphlib.alg.preorder(layout.down, child2.localID).forEach((lID) => {
-            rowNumbers[lID] += 1;
-          });
-        }
-      });
-    });
+//   scale <= 1 is a multiplier (parent width is scale * page width)
+//   scale > 1 is an exact media query min-width value in pixels
+// parentWidthBounds is a [minWidth, maxWidth] len-2 array
+//   if scale > 1 then it should be that minWidth === maxWidth
+//
+function widgetCSS(
+  widget,
+  css = new CSSBuilder(),
+  scale = 1,
+  parentWidthBounds = [Number.NEGATIVE_INFINITY, Infinity]
+) {
+  // base case -- base widgets require no responsive css
+  if (!widget.layouts) return;
 
-    // TODO: fix whitespace hack
-    const widthAssignments = layout.widthAssignments.find(layoutMinWidth);
-    const hackScale1 = widthAssignments ? actualWidth(
-      colNumbers,
-      layoutMinWidth,
-      widthAssignments.data
-    ) / layoutMinWidth : 1;
+  const layouts = widget.layouts.inRange(...parentWidthBounds).toArray();
+  layouts.forEach(({ minValue: minWidL, data: layout, next: nextL }) => {
+    const { colNumbers, rowNumbers } = cellAssignments(layout, widget.children);
+    const maxWidL = nextL ? nextL.minValue : parentWidthBounds[1];
+
+    // TODO: fix "whitespace hack"
+    /* eslint-disable */
+    const minWAssign = layout.widthAssignments.find(minWidL);
+    if (minWAssign && minWidL) {
+      minWidL = actualWidth(colNumbers, minWidL, minWAssign.data);
+    }
+    /* eslint-enable */
+
     // css for cell assignments
-    const cssLayBP = css.mediaQuery(layoutMinWidth * scale * hackScale1);
+    const cssLayBP = css.mediaQuery(scale > 1 ? scale : minWidL / scale);
     widget.children.forEach((child) => {
       const selector = `#${child.globalID}`;
       cssLayBP.addRule(selector, 'grid-column', colNumbers[child.localID] + 1);
@@ -95,40 +121,68 @@ function widgetCSS(widget, scale = 1, css = new CSSBuilder()) {
     });
 
     // css for width assignments
-    layout.widthAssignments.forEach(({ minValue: mw, data: wA }) => {
-      // TODO: fix whitespace hack
-      const hackScale2 = actualWidth(colNumbers, mw, wA) / mw;
-      // actual css generation code
-      const cssWidthBP = css.mediaQuery(mw * scale * hackScale2);
+    const widthAssignments = layout.widthAssignments
+      .inRange(minWidL, maxWidL)
+      .toArray();
+    widthAssignments.forEach(({ minValue: minWidWA, data: wA, next }) => {
+      // TODO: fix "whitespace hack"
+      /* eslint-disable */
+      const origMinW = minWidWA;
+      minWidWA = actualWidth(colNumbers, minWidWA, wA);
+      /* eslint-enable */
+
+      const maxWidWA = next ? next.minValue : maxWidL;
+      const cssWidthBP = css.mediaQuery(scale > 1 ? scale : minWidWA / scale);
       widget.children.forEach((child) => {
-        let [width, minusFixed] = wA[child.localID];
-        let widthCSS = null;
-        if (width > 1) {
-          const pxWidth = parseFloat(width.toFixed(precision));
-          widthCSS = `${pxWidth}px`;
+        // generate css to set width of child widget
+        let width = wA[child.localID][0];
+        const minusFixed = wA[child.localID][1];
+        let widthCSS = '';
+        if (width > 1 || scale > 1) {
+          const pxWidth = width * (width > 1 ? 1 : parentWidthBounds[0]);
+          widthCSS = `${round(pxWidth)}px`;
         } else {
-          width /= hackScale2;
-          const vwWidth = parseFloat((width*100).toFixed(precision));
+          // TODO: fix "whitespace hack"
+          width *= (origMinW / minWidWA);
+
+          const scaledWidth = width * scale;
+          const vwWidth = round(scaledWidth * 100);
           if (minusFixed === 0) {
             widthCSS = `${vwWidth}vw`;
           } else {
-            const fracWidth = parseFloat(width.toFixed(precision));
-            const pxFixed = parseFloat((minusFixed).toFixed(precision));
+            const fracWidth = round(scaledWidth);
+            const pxFixed = round(minusFixed);
             widthCSS = `calc(${vwWidth}vw - (${fracWidth} * ${pxFixed}px))`;
           }
         }
         cssWidthBP.addRule(`#${child.globalID}`, 'width', widthCSS);
-        // recurse -- TODO: with proper scaling
-        widgetCSS(child, scale / wA[child.localID][0], css);
+
+        // calculate scale and bounds for child widget
+        let newScale = scale;
+        if (newScale <= 1) {
+          newScale = width > 1 ? minWidWA / scale : scale * width;
+        }
+        let newBounds = [width, width];
+        if (width <= 1) {
+          // TODO: fix "whitespace hack"
+          /* eslint-disable */
+          minWidWA = origMinW;
+          /* eslint-enable */
+          newBounds = [width * minWidWA, width * maxWidWA];
+        }
+
+        // recurse
+        widgetCSS(child, css, newScale, newBounds);
       });
     });
   });
-  return css;
 }
 
 function pageCSS(page) {
   const css = basePageCSS(page);
-  return widgetCSS(page, 1, css);
+  widgetCSS(page, css);
+  css.squish();
+  return css;
 }
 
 module.exports = pageCSS;

@@ -16,7 +16,7 @@ function allTrue(arr, f) {
 function range(start, stop, step = 1) {
   const begin = stop === undefined ? 0 : start;
   const end = stop === undefined ? start : stop;
-  const length = Math.max(Math.floor((end - begin) / step), 0);
+  const length = Math.max(Math.ceil((end - begin) / step), 0);
   const output = new Array(length);
   for (let i = 0; i < length; i += 1) {
     output[i] = begin + (step * i);

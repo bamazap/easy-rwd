@@ -12,7 +12,7 @@ ${indentHTML(innerHTML)}
 </div>\n`);
 }
 
-function generatedHTML(id, className, innerHTML, numIndents = 0) {
+function generatedHTML(id, className, innerHTML) {
   return indentHTML(`<div id="${id}" class="erwd-widget ${className}">
   <div class="erwd-children">
 ${indentHTML(innerHTML.replace(/\s*$/, ''), 1)}
@@ -22,7 +22,7 @@ ${indentHTML(innerHTML.replace(/\s*$/, ''), 1)}
 
 // concatenates the html of the widget's children and returns it
 // or returns the value of the html field for a base widget
-function buildWidgetHTML(widget, numIndents = 0) {
+function buildWidgetHTML(widget) {
   const className = `${widget.name} ${widget.localID}`;
   if (widget.html !== undefined) {
     return baseHTML(widget.globalID, className, widget.html);
@@ -30,7 +30,7 @@ function buildWidgetHTML(widget, numIndents = 0) {
   const innerHTML = widget.children
     .map(child => buildWidgetHTML(child, 1))
     .reduce((a, b) => `${a}\n${b}`);
-  return generatedHTML(widget.globalID, className, innerHTML, 1);
+  return generatedHTML(widget.globalID, className, innerHTML);
 }
 
 // builds and returns HTML for a page (a page is just a widget object)
@@ -47,7 +47,7 @@ function pageHTML(page, appName, head) {
   </head>
   <body style="margin:0;">
 ${indentHTML(buildWidgetHTML(page), 1).slice(0, -oneIndent.length)}</body>
-</html>`.replace(/(?:\r\n|\r|\n)\s*(?:\r\n|\r|\n)/g, `\n\n`);
+</html>`.replace(/(?:\r\n|\r|\n)\s*(?:\r\n|\r|\n)/g, '\n\n');
 }
 
 module.exports = pageHTML;

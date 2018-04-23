@@ -78,6 +78,7 @@ function readHTML() {
   find.fileSync(/\.htm[l]?$/, `${'.'}/src`).forEach((file) => {
     let name = file.substr(file.lastIndexOf('/') + 1);
     name = name.substr(0, name.lastIndexOf('.'));
+    if (name === 'head') return;
     const fileContent = fs.readFileSync(file, 'utf8').trim();
     // first line of file is special size comment
     const sizeComment = fileContent.substr(0, fileContent.indexOf('\n'));

@@ -46,8 +46,6 @@ function flexDAG(dag, widgets, parentWidthRange, userGrows = {}) {
     }
   });
 
-  // precalculate sums of grow values for each leg
-  const legGrowTotals = legs.map(l => l.map(w => grows[w]).reduce(add));
 
   // arguments
   // prevFracs: Fracs -- used as starting place
@@ -80,7 +78,7 @@ function flexDAG(dag, widgets, parentWidthRange, userGrows = {}) {
             grows[widgetName] / legGrowTotal,
             newFracs[widgetName][0]
           ),
-          Math.max(fixedSpace, newFracs[widgetName][1])
+          Math.max(fixedSpace, newFracs[widgetName][1]),
         ];
         // clip widgets to fixed sizes if they exceed their width range
         const pxWidth = newFracs[widgetName][0] * (parentWidth - fixedSpace);
@@ -88,7 +86,7 @@ function flexDAG(dag, widgets, parentWidthRange, userGrows = {}) {
         if (!range.rangeIn(widgets[widgetName].width, Math.round(pxWidth))) {
           newFracs[widgetName] = [
             range.rangeFloor(widgets[widgetName].width, pxWidth),
-            0
+            0,
           ];
         }
       });
@@ -109,7 +107,7 @@ function flexDAG(dag, widgets, parentWidthRange, userGrows = {}) {
   });
 
   // a breakpoint is needed for edge/discontinuity in width range
-  const breakpoints = new Breakpoints(true);
+  const breakpoints = new Breakpoints();
   let lastFracs = null;
   range.rangeForEach(parentWidthRange, (parentWidth) => {
     const newFracs = expand(minFracs, parentWidth);

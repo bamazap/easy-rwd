@@ -1,3 +1,4 @@
+const util = require('util');
 const LinkedList = require('linked-list');
 
 // if a linked list has only one item, the tail should be the head
@@ -15,15 +16,10 @@ class Breakpoint extends LinkedList.Item {
 }
 
 // represents a set of breakpoints
-// by default, each breakpoint data is an array
-//   adding the same breakpoint twice appends to the array
-// if you set singleton to true, data is exactly what you pass in
-//   adding the same breakpoint twice overwrites the old data
 class Breakpoints {
-  constructor(singleton = false) {
+  constructor() {
     this.rep = new LinkedList();
     this.rep.prepend(new Breakpoint(Number.NEGATIVE_INFINITY, []));
-    this.singleton = singleton;
     this.skipSentinel = true;
   }
 
@@ -32,14 +28,9 @@ class Breakpoints {
     if (minValue === Number.NEGATIVE_INFINITY) this.skipSentinel = false;
     const breakpoint = this.find(minValue, true);
     if (breakpoint.minValue === minValue) {
-      if (this.singleton) {
-        breakpoint.data = data;
-      } else {
-        breakpoint.data.push(data);
-      }
+      breakpoint.data = data;
     } else {
-      const newData = this.singleton ? data : [data];
-      breakpoint.append(new Breakpoint(minValue, newData));
+      breakpoint.append(new Breakpoint(minValue, data));
     }
   }
 
@@ -70,24 +61,34 @@ class Breakpoints {
     return breakpoint;
   }
 
-  // calls f on each breakpoint
-  forEach(f) {
+  // returns an array of all breakpoints
+  toArray() {
+    const arr = [];
     let bp = this.skipSentinel === true ? this.rep.head.next : this.rep.head;
     while (bp !== null) {
-      if (bp.minValue > Number.NEGATIVE_INFINITY) {
-        f(bp, bp.next ? bp.next.minValue : Infinity);
-      }
+      arr.push(bp);
       bp = bp.next;
     }
+    return arr;
   }
 
-  // returns an array of the return values of calling f on each breakpoint
-  map(f) {
-    const arr = [];
-    this.forEach((breakpoint) => {
-      arr.push(f(breakpoint));
-    });
-    return arr;
+  // returns a new Breakpoints
+  // of all breakpoints active at some point between two values
+  // minimum values below the lower bound are clipped to the lower bound
+  inRange(a, b) {
+    const newBP = new Breakpoints();
+    this.toArray()
+      .filter(({ minValue, next }) =>
+        b > minValue && (!next || a < next.minValue))
+      .forEach(({ minValue, data }) => {
+        newBP.add(minValue, data);
+      });
+    return newBP;
+  }
+
+  [util.inspect.custom](_depth, _opts) {
+    return this.toArray().map(bp =>
+      `${bp.minValue}: ${util.inspect(bp.data)}`).join('\n');
   }
 }
 

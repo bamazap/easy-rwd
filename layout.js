@@ -177,7 +177,7 @@ class Layout {
 // ouput is a ResponsiveLayout: array of number, Layout pairs
 //   the number specifies the minimum width for which the layout is valid
 function createLayouts(widget, layoutAlg, widthAlg) {
-  const responsiveLayout = new Breakpoints(true);
+  const responsiveLayout = new Breakpoints();
   let lastLayout = null;
   arrUtils.range(maxScreenWidth + 1).forEach((i) => {
     const newLayout = layoutAlg(widget, i, widthAlg);
@@ -193,7 +193,7 @@ function createLayouts(widget, layoutAlg, widthAlg) {
 // given a layout breakpoints
 // return a single width range which contains its possible widths
 function widthOfLayouts(layouts) {
-  return layouts
+  return layouts.toArray()
     .map((bp) => {
       const maxWidth = bp.next ? bp.next.minValue - 1 : Infinity;
       return range.clipRange(bp.data.width, bp.minValue, maxWidth);
@@ -206,7 +206,7 @@ function widthOfLayouts(layouts) {
 // can optionally provide the width range to save computation
 function heightOfLayouts(layouts, widthR) {
   const width = widthR === undefined ? widthOfLayouts(layouts) : widthR;
-  const responsiveHeight = new Breakpoints(true);
+  const responsiveHeight = new Breakpoints();
   let breakpoint = layouts.find(range.rangeMin(width));
   let lastHeight = null;
   range.rangeForEach(width, (w) => {

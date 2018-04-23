@@ -113,7 +113,7 @@ function addRanges(range1, range2) {
     });
   });
   // join segments that overlap using the classic algorithm
-  segments.sort(segment => segment[0]);
+  segments.sort((segmentA, segmentB) => segmentA[0] - segmentB[0]);
   const newRange = [];
   let joinedSegment = segments[0].slice(0);
   segments.slice(1).forEach((segment) => {
@@ -130,7 +130,7 @@ function addRanges(range1, range2) {
 
 function rangeForEach(range, f) {
   range.forEach(([a, b]) => {
-    arrUtils.range(a, b).forEach(f);
+    arrUtils.range(a, b + 1).forEach(f);
   });
 }
 
