@@ -57,6 +57,7 @@ function basePageCSS(page) {
     widget.children.forEach((child) => {
       css.addRule(`.${child.name}`, 'min-width', `${rangeMin(child.width)}px`);
       css.addRule(`.${child.name}`, 'max-width', `${rangeMax(child.width)}px`);
+      recursiveStep(child);
     });
   };
   recursiveStep(page);
