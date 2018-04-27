@@ -1,4 +1,5 @@
 const graphlib = require('graphlib');
+const util = require('util');
 
 const arrUtils = require('./utils/array-utils');
 const range = require('./utils/range');
@@ -169,7 +170,11 @@ class Layout {
       this.down.edges()
         .map(({ v, w }) => `  ${v} -> ${w}\n`)
         .reduce((a, b) => a + b, '')
-    }`;
+    }`.trim();
+  }
+
+  [util.inspect.custom](_depth, _opts) {
+    return this.toString();
   }
 }
 

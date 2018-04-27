@@ -29,7 +29,7 @@ function objectsEqual(obj1, obj2, eqFn = (a, b) => a === b) {
   const keys1 = Object.keys(obj1);
   const keys2 = Object.keys(obj2);
   if (keys1.length !== keys2.length) return false;
-  return keys1.reduce((eq, key) => eq && eqFn(obj1[key], obj2[key]));
+  return keys1.reduce((eq, key) => eq && eqFn(obj1[key], obj2[key]), true);
 }
 
 // returns a new object which is a copy of extendObj

@@ -144,10 +144,12 @@ function rangeIn(range, i) {
 function rangeFloor(range, i) {
   let ans = null;
   arrUtils.forEachReverse(range, ([a, b]) => {
-    if (i > b) {
-      ans = b;
-    } else if (i >= a && i <= b) {
-      ans = i;
+    if (ans === null) {
+      if (i > b) {
+        ans = b;
+      } else if (i >= a && i <= b) {
+        ans = i;
+      }
     }
   });
   if (ans === null) {

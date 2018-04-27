@@ -70,8 +70,8 @@ function basePageCSS(page) {
 function actualWidth(colNumbers, minimumWidth, widthAssignments) {
   const colWidths = new Array(Math.max(...Object.values(colNumbers)));
   Object.entries(colNumbers).forEach(([localID, c]) => {
-    const width = widthAssignments[localID][0];
-    const pxWidth = width > 1 ? width : width * minimumWidth;
+    const [width, fixedSpace] = widthAssignments[localID];
+    const pxWidth = width > 1 ? width : width * (minimumWidth - fixedSpace);
     colWidths[c] = colWidths[c] ? Math.max(colWidths[c], pxWidth) : pxWidth;
   });
   return colWidths.reduce((a, b) => a + b, 0);
@@ -94,7 +94,7 @@ function round(x) {
 function widgetCSS(
   widget,
   css = new CSSBuilder(),
-  scale = 1,
+  scale = [1, 0],
   parentWidthBounds = [Number.NEGATIVE_INFINITY, Infinity]
 ) {
   // base case -- base widgets require no responsive css
@@ -114,7 +114,8 @@ function widgetCSS(
     /* eslint-enable */
 
     // css for cell assignments
-    const cssLayBP = css.mediaQuery(scale > 1 ? scale : minWidL / scale);
+    const pxLayBP = scale[0] > 1 ? scale[0] : (minWidL / scale[0]) + scale[1];
+    const cssLayBP = css.mediaQuery(pxLayBP);
     widget.children.forEach((child) => {
       const selector = `#${child.globalID}`;
       cssLayBP.addRule(selector, 'grid-column', colNumbers[child.localID] + 1);
@@ -125,6 +126,7 @@ function widgetCSS(
     const widthAssignments = layout.widthAssignments
       .inRange(minWidL, maxWidL)
       .toArray();
+
     widthAssignments.forEach(({ minValue: minWidWA, data: wA, next }) => {
       // TODO: fix "whitespace hack"
       /* eslint-disable */
@@ -133,43 +135,54 @@ function widgetCSS(
       /* eslint-enable */
 
       const maxWidWA = next ? next.minValue : maxWidL;
-      const cssWidthBP = css.mediaQuery(scale > 1 ? scale : minWidWA / scale);
+      const pxWaBP = scale[0] > 1 ? scale[0] : (minWidWA / scale[0]) + scale[1];
+      const cssWidthBP = css.mediaQuery(pxWaBP);
       widget.children.forEach((child) => {
         // generate css to set width of child widget
         let width = wA[child.localID][0];
         const minusFixed = wA[child.localID][1];
         let widthCSS = '';
-        if (width > 1 || scale > 1) {
-          const pxWidth = width * (width > 1 ? 1 : parentWidthBounds[0]);
+        if (width > 1) {
+          widthCSS = `${round(width)}px`;
+        } else if (scale[0] > 1) {
+          const pxWidth = width * (parentWidthBounds[0] - minusFixed);
           widthCSS = `${round(pxWidth)}px`;
         } else {
           // TODO: fix "whitespace hack"
           width *= (origMinW / minWidWA);
-
-          const scaledWidth = width * scale;
+          const scaledWidth = width * scale[0];
           const vwWidth = round(scaledWidth * 100);
-          if (minusFixed === 0) {
+          if (minusFixed === 0 && scale[1] === 0) {
             widthCSS = `${vwWidth}vw`;
           } else {
             const fracWidth = round(scaledWidth);
-            const pxFixed = round(minusFixed);
+            const pxFixed = round(minusFixed + scale[1]);
             widthCSS = `calc(${vwWidth}vw - (${fracWidth} * ${pxFixed}px))`;
           }
         }
         cssWidthBP.addRule(`#${child.globalID}`, 'width', widthCSS);
 
-        // calculate scale and bounds for child widget
-        let newScale = scale;
-        if (newScale <= 1) {
-          newScale = width > 1 ? minWidWA / scale : scale * width;
+        // calculate scale
+        const newScale = [scale[0], minusFixed];
+        if (newScale[0] <= 1) {
+          if (width > 1) {
+            newScale[0] = (minWidWA / scale[0]) + scale[1];
+          } else {
+            newScale[0] = scale[0] * width;
+          }
         }
+
+        // calculate bounds
         let newBounds = [width, width];
         if (width <= 1) {
           // TODO: fix "whitespace hack"
           /* eslint-disable */
           minWidWA = origMinW;
           /* eslint-enable */
-          newBounds = [width * minWidWA, width * maxWidWA];
+          newBounds = [
+            width * (minWidWA - minusFixed),
+            width * (maxWidWA - minusFixed),
+          ];
         }
 
         // recurse

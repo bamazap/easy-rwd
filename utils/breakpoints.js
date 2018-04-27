@@ -81,7 +81,7 @@ class Breakpoints {
       .filter(({ minValue, next }) =>
         b > minValue && (!next || a < next.minValue))
       .forEach(({ minValue, data }) => {
-        newBP.add(minValue, data);
+        newBP.add(Math.max(minValue, a), data);
       });
     return newBP;
   }
