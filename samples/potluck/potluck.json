@@ -1,0 +1,81 @@
+{
+    "index": {
+        "children": [
+            "navbarloggedout",
+            "signinregister",
+            "info",
+            "picture"
+        ],
+        "down": [
+            ["navbarloggedout", "signinregister"],
+            ["signinregister", "info"],
+            ["info", "picture"]
+        ]
+    },
+    "signinregister": {
+        "children": [
+            "signin",
+            "register"
+        ]
+    },
+    "dashboard": {
+        "children": [
+            "navbarloggedin",
+            "newpartybutton",
+            "parties"
+        ],
+        "down": [
+            ["navbarloggedin", "newpartybutton"],
+            ["navbarloggedin", "parties"]
+        ]
+    },
+    "parties": {
+        "children": [
+            "party",
+            "party"
+        ],
+        "down": [
+            [0, 1]
+        ]
+    },
+    "party": {
+        "children": [
+            "partytitle",
+            "partyinfo",
+            "partycontrols",
+            "partyguests",
+            "partysupplies"
+        ],
+        "down": [
+            ["partytitle", "partyinfo"],
+            ["partytitle", "partycontrols"],
+            ["partyinfo", "partyguests"],
+            ["partyinfo", "partysupplies"],
+            ["partycontrols", "partyguests"],
+            ["partycontrols", "partysupplies"]
+        ]
+    },
+    "partyguests": {
+        "children": [
+            "invitedlist",
+            "attendinglist"
+        ]
+    },
+    "partysupplies": {
+        "children": [
+            "supplytable",
+            "addsupply"
+        ]
+    },
+    "newparty": {
+        "children": [
+            "navbarloggedin",
+            "newpartyheading",
+            "newpartyform"
+        ],
+        "down": [
+            ["navbarloggedin", "newpartyheading"],
+            ["navbarloggedin", "newpartyform"]
+        ]
+    }
+}

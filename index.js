@@ -7,14 +7,17 @@ const buildPageCSS = require('./css');
 
 function build(file, layoutAlg, widthAlg) {
   // read & process inputs
-  const widgets = widgetUtils.uniqifyLocally(fileio.readIn(file));
+  const widgets = widgetUtils.uniqifyLocally(
+    widgetUtils.topologicallySort(
+      fileio.readIn(file)
+    )
+  );
   const userStyles = fileio.readCSS();
   const head = fileio.readHead();
   const appName = file.substr(0, file.lastIndexOf('.'));
 
   // assemble generated widgets from bottom of widget tree up
-  widgetUtils.topologicallySort(widgets).forEach((widgetName) => {
-    const widget = widgets[widgetName];
+  widgets.forEach((widget) => {
     if (widget.children.length > 0) {
       widget.layouts = layoutUtils.createLayouts(widget, layoutAlg, widthAlg);
       widget.width = layoutUtils.widthOfLayouts(widget.layouts);
@@ -23,11 +26,13 @@ function build(file, layoutAlg, widthAlg) {
   });
 
   // output CSS and HTML for each top-level (page) widget
-  widgetUtils.getPages(widgets).forEach((pageName) => {
-    const page = widgetUtils.uniqifyGlobally(widgets[pageName]);
+  fileio.buildDir();
+  const numPages = widgetUtils.countPages(widgets);
+  widgets.slice(widgets.length - numPages).forEach((widget) => {
+    const page = widgetUtils.uniqifyGlobally(widget);
     const html = buildPageHTML(page, appName, head);
     const css = `${userStyles}\n${buildPageCSS(page)}`;
-    fileio.writeOut(pageName, html, css);
+    fileio.writeOut(page.name, html, css);
   });
 }
 

@@ -10,6 +10,8 @@ const {
   allTrue,
   sum,
   forEachReverse,
+  allIndexesOf,
+  product,
 } = require('./array-utils');
 
 // logs msg and then exits with the given code
@@ -29,4 +31,6 @@ module.exports = {
   wrap,
   objectsEqual,
   copyObject,
+  allIndexesOf,
+  product,
 };

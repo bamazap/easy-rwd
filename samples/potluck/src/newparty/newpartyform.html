@@ -1,0 +1,88 @@
+<!-- "width": [440, 690], "height": 324 -->
+<form class="form-horizontal">
+  <div class="form-group">
+    <label class="sr-only" for="starts-on">Starts On</label>
+    <div
+      class="input-group date"
+      data-autoclose="true"
+      data-provide="datepicker"
+      data-today-higlight="true"
+      id="starts-on"
+    >
+      <input
+        class="form-control"
+        id="starts-on-text"
+        placeholder="Starts on (mm/dd/yy)"
+        type="text"
+      >
+      <div class="input-group-addon">
+        Date
+      </div>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="sr-only" for="ends-on">Ends On</label>
+    <div
+      class="input-group date"
+      data-autoclose="true"
+      data-provide="datepicker"
+      data-today-higlight="true"
+      id="ends-on"
+    >
+      <input
+        class="form-control"
+        id="ends-on-text"
+        placeholder="Ends on (mm/dd/yy)"
+        type="text"
+      >
+      <div class="input-group-addon">
+        Date
+      </div>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="sr-only" for="start-time">Start Time</label>
+    <div class="input-group bootstrap-timepicker timepicker" id="start-time">
+      <input
+        class="form-control"
+        data-provide="timepicker"
+        id="start-time-text"
+        placeholder="Start time (hh:mm)"
+        type="text"
+      >
+      <div class="input-group-addon">
+        Time
+      </div>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="sr-only" for="end-time">End Time</label>
+    <div class="input-group bootstrap-timepicker timepicker" id="end-time">
+      <input
+        class="form-control"
+        data-provide="timepicker"
+        id="end-time-text"
+        placeholder="End time (hh:mm)"
+        type="text"
+      >
+      <div class="input-group-addon">
+        Time
+      </div>
+    </div>
+  </div>
+  <fieldset class="form-group">
+    <label class="sr-only" for="name">Name</label>
+    <input
+      class="form-control"
+      name="name"
+      placeholder="Name"
+      type="text"
+    >
+  </fieldset>
+  <div class="form-group">
+    <button class="btn btn-default btn-sm">Submit</button>
+  </div>
+</form>
+<a class="btn btn-primary" href="dashboard.html">
+  Return to Your Parties
+</a>

@@ -1,0 +1,7 @@
+#namebox {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding-top: 25px;
+    padding-bottom: 25px;
+    background-color: #fff;
+}

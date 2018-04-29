@@ -31,9 +31,31 @@ function forEachReverse(arr, f) {
   }
 }
 
+function allIndexesOf(arr, val) {
+  const indexes = [];
+  for (let i = 0; i < arr.length; i += 1) {
+    if (arr[i] === val) {
+      indexes.push(i);
+    }
+  }
+  return indexes;
+}
+
+function product(arr1, arr2) {
+  output = [];
+  arr1.forEach((elm1) => {
+    arr2.forEach((elm2) => {
+      output.push([elm1, elm2]);
+    });
+  });
+  return output
+}
+
 module.exports = {
   sum,
   allTrue,
   range,
   forEachReverse,
+  allIndexesOf,
+  product,
 };

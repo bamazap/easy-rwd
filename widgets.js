@@ -3,58 +3,50 @@ const graphlib = require('graphlib');
 const { wrap } = require('./utils/object-utils');
 const Counter = require('./utils/counter');
 
-// returns an array of the names of the widgets that are not children
-function getPages(widgets) {
-  const pageNames = new Set(Object.keys(widgets));
-  Object.keys(widgets).forEach((widgetName) => {
-    const widget = widgets[widgetName];
+// returns the number of widgets in a list that are pages
+//   i.e. not children of any other widgets in the list
+function countPages(widgets) {
+  const pageNames = new Set(widgets.map(widget => widget.name));
+  widgets.forEach((widget) => {
     widget.children.forEach((child) => {
       pageNames.delete(child.name);
     });
   });
-  return Array.from(pageNames);
+  return pageNames.size;
 }
 
-// given widgets object, returns widget names in topologically sorted order
+// returns widget names in topologically sorted order
 // that is, every widget is listed before every widget that contains it
 function topologicallySort(widgets) {
   const graph = new graphlib.Graph();
   Object.keys(widgets).forEach((widgetName) => {
     graph.setNode(widgetName);
   });
-  Object.keys(widgets).forEach((widgetName) => {
-    const widget = widgets[widgetName];
+  Object.values(widgets).forEach((widget) => {
     widget.children.forEach((child) => {
       graph.setEdge(widget.name, child.name);
     });
   });
-  return graphlib.alg.topsort(graph).reverse(); // want base widgets first
+  // return sorted list (base widgets first)
+  return graphlib.alg.topsort(graph).reverse().map(name => widgets[name]);
 }
 
-// takes an object mapping widget names to widget objects
+// takes an array of widget objects
 // returns a new object where widget objects now have the property localID
 // no two objects in the same children array have the same localID
 // new objects maintain a view of original widget objects
-function uniqifyLocally(widgets) {
-  const newWidgets = {};
+function uniqifyLocally(widgetArray) {
   const counter = new Counter();
-  topologicallySort(widgets).forEach((widgetName) => {
+  widgetArray.forEach((widget) => {
     // set localID for each child
-    const children = widgets[widgetName].children.map((child) => {
+    widget.children = widget.children.map((child) => {
       const number = counter.count(child.name);
-      const newChild = newWidgets[child.name];
-      newChild.localID = `${child.name}-${number}`;
-      return newChild;
+      const localID = `${child.name}-${number}`;
+      return wrap(child, { localID });
     });
-    // new object has new children and a number field
-    const newProps = {
-      children,
-      localID: `${widgetName}-0`,
-    };
-    newWidgets[widgetName] = wrap(widgets[widgetName], newProps);
     counter.reset(); // only care about numbering within each child array
   });
-  return newWidgets;
+  return widgetArray;
 }
 
 // starting from a base widget, returns a new widget where all children are
@@ -68,7 +60,7 @@ function uniqifyGlobally(widget, counter) {
 }
 
 module.exports = {
-  getPages,
+  countPages,
   uniqifyLocally,
   uniqifyGlobally,
   topologicallySort,

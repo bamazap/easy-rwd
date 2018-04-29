@@ -1,34 +1,41 @@
 const find = require('find');
 const fs = require('fs-extra');
 
-const { exit, allTrue } = require('./utils/utils');
+const { exit, allTrue, allIndexesOf, product } = require('./utils/utils');
 
 const reservedNames = ['head', 'erwd-widget', 'erwd-children'];
 
 // reads and processes JSON file to create widgets object
 function readWidgets(file) {
   const widgets = JSON.parse(fs.readFileSync(file, 'utf8'));
-  Object.keys(widgets).forEach((widgetName) => {
+  Object.entries(widgets).forEach(([widgetName, widget]) => {
     if (reservedNames.indexOf(widgetName) !== -1) {
       exit(`Widget called ${widgetName} uses reserved name`, 1);
     }
     // give each widget a name field
-    widgets[widgetName].name = widgetName;
-    // shorthand: set row field to false if unspecified
-    if (widgets[widgetName].row === undefined) {
-      widgets[widgetName].row = false;
-    }
-    // shorthand: handle special row syntax
-    widgets[widgetName].children.forEach((child, i) => {
-      if (Array.isArray(child)) {
-        const rowName = `${widgetName}-row-${i}`;
-        widgets[rowName] = {
-          name: rowName,
-          children: child,
-          row: true,
-        };
-        widgets[widgetName].children[i] = rowName;
+    widget.name = widgetName;
+    // need to initialize every widget property since object-utils.wrap is used
+    widget.width = null;
+    widget.height = null;
+    widget.layouts = null;
+    // user constraints
+    ['right', 'down'].forEach((direction) => {
+      if (widget[direction] === undefined) {
+        widget[direction] = [];
+        return;
       }
+
+      widget[direction] = [].join(...widget[direction].map((identifiers) =>
+        product(...identifiers.map((identifier) => {
+          if (typeof identifier === 'number') {
+            return [identifier];
+          }
+          if (typeof identifier === 'string') {
+            return allIndexesOf(widget.children, identifier);
+          }
+          exit(`Badly formatted ${directon} in widget ${widgetName}.`, 1);
+        }))
+      ));
     });
   });
   return widgets;
@@ -90,13 +97,13 @@ function readHTML() {
       html,
       children: [],
       name,
-      row: false,
     };
     newWidgets.push(widget);
   });
   return newWidgets;
 }
 
+// returns an object mapping widget names to widget objects
 function readIn(file) {
   // get generated widgets from JSON file
   const widgets = readWidgets(file);
@@ -126,8 +133,11 @@ function readHead() {
   return files.length === 1 ? fs.readFileSync(files[0], 'utf8') : '';
 }
 
-function writeOut(pageName, html, css) {
+function buildDir() {
   fs.emptyDirSync('./build');
+}
+
+function writeOut(pageName, html, css) {
   fs.writeFileSync(`./build/${pageName}.html`, html);
   fs.writeFileSync(`./build/${pageName}.css`, css);
 }
@@ -137,5 +147,6 @@ module.exports = {
   writeOut,
   readCSS,
   readHead,
+  buildDir,
 };
 
