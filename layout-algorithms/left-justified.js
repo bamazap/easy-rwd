@@ -1,10 +1,8 @@
-const { Layout } = require('../layout');
 const range = require('../utils/range');
 
 // this version is not meant to be very intelligent
 // does a simple left to right, row by row approach
-function leftJustified(parent, widthAvailable, widthAlg) {
-  const layout = new Layout(parent.children, widthAlg);
+function leftJustified(layout, parent, widthAvailable) {
   let thisRowWidth = 0;
   let lastRow = [];
   let thisRow = [];

@@ -1,17 +1,7 @@
 const { objectsEqual } = require('../utils/object-utils');
 const range = require('../utils/range');
 const Breakpoints = require('../utils/breakpoints');
-
-// returns Breakpoints (singleton)
-function sourceToSinkPaths(dag) {
-  const recursiveStep = (node) => {
-    const successors = dag.successors(node);
-    if (successors.length === 0) return [[node]];
-    return successors.map(suc =>
-      [].concat(...recursiveStep(suc).map(leg => [node].concat(leg))));
-  };
-  return [].concat(...dag.sources().map(recursiveStep));
-}
+const { sourceToSinkPaths } = require('../utils/dag-utils');
 
 function add(a, b) {
   return a + b;
@@ -107,15 +97,11 @@ function flexDAG(dag, widgets, parentWidthRange, userGrows = {}) {
   });
 
   // a breakpoint is needed for edge/discontinuity in width range
-  const breakpoints = new Breakpoints();
-  let lastFracs = null;
-  range.rangeForEach(parentWidthRange, (parentWidth) => {
-    const newFracs = expand(minFracs, parentWidth);
-    if (lastFracs === null || !fracsEqual(lastFracs, newFracs)) {
-      breakpoints.add(parentWidth, newFracs);
-      lastFracs = newFracs;
-    }
-  });
+  const breakpoints = Breakpoints.fromFunction(
+    range.rangeToIntegerArray(parentWidthRange),
+    parentWidth => expand(minFracs, parentWidth),
+    fracsEqual
+  );
 
   return breakpoints;
 }

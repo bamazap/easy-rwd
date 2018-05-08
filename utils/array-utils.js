@@ -42,13 +42,13 @@ function allIndexesOf(arr, val) {
 }
 
 function product(arr1, arr2) {
-  output = [];
+  const output = [];
   arr1.forEach((elm1) => {
     arr2.forEach((elm2) => {
       output.push([elm1, elm2]);
     });
   });
-  return output
+  return output;
 }
 
 module.exports = {

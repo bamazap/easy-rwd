@@ -16,8 +16,7 @@ class CSSBuilder {
     }
     const oldValue = this.rules[selector][property];
     if (oldValue && oldValue !== value) {
-      process.emitWarning(`Warning: reassigning ${selector} ${property} from \
-        ${oldValue} to ${value}`);
+      process.emitWarning(`reassigning ${selector} ${property} from ${oldValue} to ${value}`);
     }
     this.rules[selector][property] = value;
   }
@@ -68,7 +67,7 @@ class CSSBuilder {
       const declCSS = Object.entries(decl).map(([prop, val]) =>
         `${baseIndent + this.indent}${prop}: ${val};`).join('\n');
       return declCSS ? `${baseIndent}${sel} {\n${declCSS}\n${baseIndent}}` : '';
-    }).join('\n\n');
+    }).filter(s => s.length > 0).join('\n\n');
     const mqCSS = Object.entries(this.mediaQueries)
       .sort(([mwA, _1], [mwB, _2]) => mwA - mwB)
       .map(([minWidth, cssBuilder]) => {
@@ -76,6 +75,7 @@ class CSSBuilder {
         const cond = CSSBuilder.mediaQueryString(minWidth);
         return css ? `${baseIndent}${cond} {\n${css}${baseIndent}}` : '';
       })
+      .filter(s => s.length > 0)
       .join('\n\n');
     return `${rulesCSS}\n${mqCSS ? '\n' : ''}${mqCSS}`;
   }

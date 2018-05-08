@@ -23,10 +23,23 @@ class Breakpoints {
     this.skipSentinel = true;
   }
 
+  static fromFunction(domain, f, cmp = (a, b) => a === b) {
+    const newBP = new Breakpoints();
+    let last = null;
+    domain.forEach((v) => {
+      const current = f(v);
+      if (last === null || !cmp(last, current)) {
+        newBP.add(v, current);
+        last = current;
+      }
+    });
+    return newBP;
+  }
+
   // add a breakpoint with the given minValue and data
   add(minValue, data) {
     if (minValue === Number.NEGATIVE_INFINITY) this.skipSentinel = false;
-    const breakpoint = this.find(minValue, true);
+    const breakpoint = this.find(minValue, false, true);
     if (breakpoint.minValue === minValue) {
       breakpoint.data = data;
     } else {
@@ -35,18 +48,20 @@ class Breakpoints {
   }
 
   // returns the breakpoint with the smallest minValue
-  min() {
-    return this.skipSentinel === true ? this.rep.head.next : this.rep.head;
+  min(returnData = true) {
+    const bp = this.skipSentinel === true ? this.rep.head.next : this.rep.head;
+    return returnData ? bp.data : bp;
   }
 
   // returns the breakpoint with the highest minValue
-  max() {
+  max(returnData = true) {
     const tail = getTail(this.rep);
-    return tail.minValue === Number.NEGATIVE_INFINITY ? null : tail;
+    const bp = tail.minValue === Number.NEGATIVE_INFINITY ? null : tail;
+    return returnData ? bp.data : bp;
   }
 
   // returns the item with the highest minValue <= value
-  find(value, returnSentinel = false) {
+  find(value, returnData = true, returnSentinel = false) {
     let breakpoint = getTail(this.rep);
     while (breakpoint.minValue > value) {
       breakpoint = breakpoint.prev;
@@ -58,7 +73,7 @@ class Breakpoints {
     ) {
       breakpoint = breakpoint.next;
     }
-    return breakpoint;
+    return returnData ? breakpoint.data : breakpoint;
   }
 
   // returns an array of all breakpoints

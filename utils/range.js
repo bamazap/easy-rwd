@@ -175,6 +175,14 @@ function rangeCeil(range, i) {
   return ans;
 }
 
+function rangeToIntegerArray(range) {
+  const integerArray = [];
+  rangeForEach(range, (i) => {
+    integerArray.push(i);
+  });
+  return integerArray;
+}
+
 
 module.exports = {
   addRanges,
@@ -188,4 +196,5 @@ module.exports = {
   rangeCeil,
   rangeMin,
   rangeMax,
+  rangeToIntegerArray,
 };

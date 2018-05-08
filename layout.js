@@ -8,7 +8,7 @@ const Breakpoints = require('./utils/breakpoints');
 const maxScreenWidth = 1920;
 
 class Layout {
-  constructor(widgetArr, widthAlg) {
+  constructor(widget, widthAlg) {
     // represent with two graphs
     this.right = new graphlib.Graph();
     this.down = new graphlib.Graph();
@@ -22,10 +22,17 @@ class Layout {
     this.maximumWidth = Infinity;
 
     // add nodes to the graphs representing widgets
-    widgetArr.forEach((widget) => {
-      this.right.setNode(widget.localID);
-      this.down.setNode(widget.localID);
-      this.widgetsByLocalID[widget.localID] = widget;
+    widget.children.forEach((child) => {
+      this.right.setNode(child.localID);
+      this.down.setNode(child.localID);
+      this.widgetsByLocalID[child.localID] = child;
+    });
+    // add pre-defined constraints
+    widget.right.forEach(([u, v]) => {
+      this.addRight(widget.children[u].localID, widget.children[v].localID);
+    });
+    widget.down.forEach(([u, v]) => {
+      this.addBelow(widget.children[u].localID, widget.children[v].localID);
     });
   }
 
@@ -46,12 +53,16 @@ class Layout {
     return true;
   }
 
+  static layoutsEqual(layoutA, layoutB) {
+    return (
+      Layout.equalGraphs(layoutA.right, layoutB.right) &&
+      Layout.equalGraphs(layoutA.down, layoutB.down)
+    );
+  }
+
   // determines if another layout object l is equal to this one
   equals(otherLayout) {
-    return (
-      Layout.equalGraphs(this.right, otherLayout.right) &&
-      Layout.equalGraphs(this.down, otherLayout.down)
-    );
+    return Layout.layoutsEqual(this, otherLayout);
   }
 
   // add a widget B is on the right of widget A relation
@@ -104,7 +115,7 @@ class Layout {
 
   // calculates the height of the layout for a given width
   height(width) {
-    const widthAssignments = this.widthAssignments.find(width).data;
+    const widthAssignments = this.widthAssignments.find(width);
 
     const heightOfWidget = localID => this.widgetsByLocalID[localID]
       .height(widthAssignments[localID]);
@@ -182,16 +193,15 @@ class Layout {
 // ouput is a ResponsiveLayout: array of number, Layout pairs
 //   the number specifies the minimum width for which the layout is valid
 function createLayouts(widget, layoutAlg, widthAlg) {
-  const responsiveLayout = new Breakpoints();
-  let lastLayout = null;
-  arrUtils.range(maxScreenWidth + 1).forEach((i) => {
-    const newLayout = layoutAlg(widget, i, widthAlg);
-    if (lastLayout === null || !newLayout.equals(lastLayout)) {
-      if (lastLayout !== null) lastLayout.maxWidth = i - 1;
-      lastLayout = newLayout;
-      responsiveLayout.add(i, newLayout);
-    }
-  });
+  const layoutFunc = (i) => {
+    const layout = new Layout(widget, widthAlg);
+    return layoutAlg(layout, widget, i);
+  };
+  const responsiveLayout = Breakpoints.fromFunction(
+    arrUtils.range(maxScreenWidth),
+    layoutFunc,
+    Layout.layoutsEqual
+  );
   return responsiveLayout;
 }
 
@@ -211,20 +221,12 @@ function widthOfLayouts(layouts) {
 // can optionally provide the width range to save computation
 function heightOfLayouts(layouts, widthR) {
   const width = widthR === undefined ? widthOfLayouts(layouts) : widthR;
-  const responsiveHeight = new Breakpoints();
-  let breakpoint = layouts.find(range.rangeMin(width));
-  let lastHeight = null;
-  range.rangeForEach(width, (w) => {
-    while (breakpoint.next && breakpoint.next.minValue <= w) {
-      breakpoint = breakpoint.next;
-    }
-    const newHeight = breakpoint.data.height(w);
-    if (lastHeight === null || lastHeight !== newHeight) {
-      lastHeight = newHeight;
-      responsiveHeight.add(w, newHeight);
-    }
-  });
-  return w => responsiveHeight.find(w).data;
+  const heightFunc = w => layouts.find(w).height(w);
+  const responsiveHeight = Breakpoints.fromFunction(
+    range.rangeToIntegerArray(width),
+    heightFunc
+  );
+  return w => responsiveHeight.find(w);
 }
 
 module.exports = {

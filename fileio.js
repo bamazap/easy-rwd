@@ -1,7 +1,9 @@
 const find = require('find');
 const fs = require('fs-extra');
 
-const { exit, allTrue, allIndexesOf, product } = require('./utils/utils');
+const {
+  exit, allTrue, allIndexesOf, product,
+} = require('./utils/utils');
 
 const reservedNames = ['head', 'erwd-widget', 'erwd-children'];
 
@@ -25,7 +27,7 @@ function readWidgets(file) {
         return;
       }
 
-      widget[direction] = [].join(...widget[direction].map((identifiers) =>
+      widget[direction] = [].concat(...widget[direction].map(identifiers =>
         product(...identifiers.map((identifier) => {
           if (typeof identifier === 'number') {
             return [identifier];
@@ -33,9 +35,9 @@ function readWidgets(file) {
           if (typeof identifier === 'string') {
             return allIndexesOf(widget.children, identifier);
           }
-          exit(`Badly formatted ${directon} in widget ${widgetName}.`, 1);
-        }))
-      ));
+          exit(`Badly formatted ${direction} in widget ${widgetName}.`, 1);
+          return [];
+        }))));
     });
   });
   return widgets;

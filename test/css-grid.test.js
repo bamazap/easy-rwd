@@ -1,8 +1,8 @@
-var assert = require('assert');
-var graphlib = require('graphlib');
-var { calculateGridCells } = require('../css-grid');
+const assert = require('assert');
+const graphlib = require('graphlib');
+const { calculateGridCells } = require('../css-grid');
 
-describe('calculateGridCells', function() {
+describe('calculateGridCells', () => {
   const widgets = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
   const right = new graphlib.Graph();
   const down = new graphlib.Graph();
@@ -10,7 +10,7 @@ describe('calculateGridCells', function() {
     right.setNode(widget);
     down.setNode(widget);
   });
-  describe('columns', function() {
+  describe('columns', () => {
     const widths = {
       a: 500,
       b: 100,
@@ -26,7 +26,7 @@ describe('calculateGridCells', function() {
     right.setEdge('f', 'g');
     const { assignments, spans } = calculateGridCells(right, widths);
 
-    it('should generate the correct assignments', function() {
+    it('should generate the correct assignments', () => {
       const correctColAssignments = {
         a: 1,
         b: 1,
@@ -39,7 +39,7 @@ describe('calculateGridCells', function() {
       assert.deepEqual(assignments, correctColAssignments);
     });
 
-    it('should generate the correct spans', function() {
+    it('should generate the correct spans', () => {
       const correctColSpans = {
         a: 4,
         b: 1,
@@ -51,10 +51,9 @@ describe('calculateGridCells', function() {
       };
       assert.deepEqual(spans, correctColSpans);
     });
-
   });
 
-  describe('rows', function() {
+  describe('rows', () => {
     const heights = {
       a: 75,
       b: 75,
@@ -76,7 +75,7 @@ describe('calculateGridCells', function() {
 
     const { assignments, spans } = calculateGridCells(down, heights);
 
-    it('should generate the correct assignments', function() {
+    it('should generate the correct assignments', () => {
       const correctRowAssignments = {
         a: 1,
         b: 2,
@@ -86,10 +85,10 @@ describe('calculateGridCells', function() {
         f: 4,
         g: 4,
       };
-      assert.deepEqual(assignments, correctRowAssignments)
+      assert.deepEqual(assignments, correctRowAssignments);
     });
 
-    it('shoud generate the correct spans', function() {
+    it('shoud generate the correct spans', () => {
       const correctRowSpans = {
         a: 1,
         b: 1,
@@ -100,6 +99,6 @@ describe('calculateGridCells', function() {
         g: 1,
       };
       assert.deepEqual(spans, correctRowSpans);
-    })
+    });
   });
 });

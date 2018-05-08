@@ -1,0 +1,20 @@
+{
+    "index": {
+        "children": [
+            "level1",
+            "base"
+        ]
+    },
+    "level1": {
+        "children": [
+            "level2",
+            "base"
+        ]
+    },
+    "level2": {
+        "children": [
+            "base",
+            "base"
+        ]
+    }
+}

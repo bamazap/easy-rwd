@@ -7,11 +7,7 @@ const buildPageCSS = require('./css');
 
 function build(file, layoutAlg, widthAlg) {
   // read & process inputs
-  const widgets = widgetUtils.uniqifyLocally(
-    widgetUtils.topologicallySort(
-      fileio.readIn(file)
-    )
-  );
+  const widgets = widgetUtils.uniqifyLocally(widgetUtils.topologicallySort(fileio.readIn(file)));
   const userStyles = fileio.readCSS();
   const head = fileio.readHead();
   const appName = file.substr(0, file.lastIndexOf('.'));

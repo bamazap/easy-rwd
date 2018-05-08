@@ -14,5 +14,8 @@ module.exports = {
       ignoreRestSiblings: true,
       argsIgnorePattern: '^_'
     }],
-  },
+    'no-param-reassign': ['error', {
+      'props': false
+    }]
+  }
 };

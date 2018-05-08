@@ -23,7 +23,7 @@ ${indentHTML(innerHTML.replace(/\s*$/, ''), 1)}
 // concatenates the html of the widget's children and returns it
 // or returns the value of the html field for a base widget
 function buildWidgetHTML(widget) {
-  const className = `${widget.name} ${widget.localID}`;
+  const className = widget.localID ? `${widget.name} ${widget.localID}` : widget.name;
   if (widget.html !== undefined) {
     return baseHTML(widget.globalID, className, widget.html);
   }
