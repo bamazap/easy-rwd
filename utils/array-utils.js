@@ -41,14 +41,38 @@ function allIndexesOf(arr, val) {
   return indexes;
 }
 
-function product(arr1, arr2) {
+// all pairings between two arrays
+// if second array is not given it does all non-duplicate pairings in the one
+//   [a, b] and [b, a] are distinct pairings
+function product(arr1, arr2 = undefined) {
   const output = [];
-  arr1.forEach((elm1) => {
-    arr2.forEach((elm2) => {
-      output.push([elm1, elm2]);
-    });
+  arr1.forEach((elm1, i) => {
+    if (arr2) {
+      arr2.forEach((elm2) => {
+        output.push([elm1, elm2]);
+      });
+    } else {
+      arr1.forEach((elm2, j) => {
+        if (i !== j) {
+          output.push([elm1, elm2]);
+        }
+      });
+    }
   });
   return output;
+}
+
+// credit: Alex Reinking
+// https://codereview.stackexchange.com/questions/139095/generate-powerset-in-js
+function powerSet(l) {
+  return (function ps(list) {
+    if (list.length === 0) {
+      return [[]];
+    }
+    const head = list.pop();
+    const tailPS = ps(list);
+    return tailPS.concat(tailPS.map(e => [head].concat(e)));
+  }(l.slice()));
 }
 
 module.exports = {
@@ -58,4 +82,5 @@ module.exports = {
   forEachReverse,
   allIndexesOf,
   product,
+  powerSet,
 };

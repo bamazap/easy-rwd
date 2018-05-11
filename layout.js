@@ -13,15 +13,14 @@ class Layout {
     this.right = new graphlib.Graph();
     this.down = new graphlib.Graph();
 
-    this.widgetsByLocalID = {};
-
+    this.widget = widget;
     this.widthAlg = widthAlg;
 
     this.widthMemo = null;
     this.widthAssignmentsMemo = null;
     this.maximumWidth = Infinity;
 
-    // add nodes to the graphs representing widgets
+    this.widgetsByLocalID = {};
     widget.children.forEach((child) => {
       this.right.setNode(child.localID);
       this.down.setNode(child.localID);
@@ -113,61 +112,57 @@ class Layout {
     this.maximumWidth = maxWidth;
   }
 
+  heightFromWidget(localID, widthAssignments) {
+    // the widgets directly below this one
+    const localIDsOfWidgetsBelow = this.down.successors(localID);
+
+    // base case: if there are no widgets below you, return your height
+    if (localIDsOfWidgetsBelow.length === 0) {
+      return this.widgetsByLocalID[localID].height(widthAssignments[localID]);
+    }
+
+    // recursively calculate the height of all widgets below this one
+    const belowHeight = localIDsOfWidgetsBelow
+      .map(belowLocalID => this.heightFromWidget(belowLocalID, widthAssignments))
+      .reduce((maxHeight, height) => Math.max(maxHeight, height));
+    // return the added height of this widget and the ones below it
+    return this.widgetsByLocalID[localID].height(widthAssignments[localID]) + belowHeight;
+  }
+
   // calculates the height of the layout for a given width
   height(width) {
     const widthAssignments = this.widthAssignments.find(width);
 
-    const heightOfWidget = localID => this.widgetsByLocalID[localID]
-      .height(widthAssignments[localID]);
-
-    const recursiveStep = (localID) => {
-      // the widgets directly below this one
-      const localIDsOfWidgetsBelow = this.down.successors(localID);
-
-      // base case: if there are no widgets below you, return your height
-      if (localIDsOfWidgetsBelow.length === 0) {
-        return heightOfWidget(localID);
-      }
-
-      // recursively calculate the height of all widgets below this one
-      const belowHeight = localIDsOfWidgetsBelow
-        .map(belowLocalID => recursiveStep(belowLocalID))
-        .reduce((maxHeight, height) => Math.max(maxHeight, height));
-      // return the added height of this widget and the ones below it
-      return heightOfWidget(localID) + belowHeight;
-    };
-
     // call the recursive function on all widgets on the very top
     // and determine the overall height of the widget
     return this.down.sources()
-      .map(localID => recursiveStep(localID))
+      .map(localID => this.heightFromWidget(localID, widthAssignments))
       .reduce((maxHeight, height) => Math.max(maxHeight, height));
+  }
+
+  widthFromWidget(localID) {
+    // the widgets directly on the right of this one
+    const localIDsOfWidgetsOnRight = this.right.successors(localID);
+
+    // base case: if there are no widgets on the right, return your width
+    if (localIDsOfWidgetsOnRight.length === 0) {
+      return this.widgetsByLocalID[localID].width;
+    }
+    // recursively calculate the width of all widgets on this one's right
+    // and determine the range of possible overall widths for the right
+    const rightWidth = localIDsOfWidgetsOnRight
+      .map(rightLocalID => this.widthFromWidget(rightLocalID))
+      .reduce((maxWidth, width) => range.maxRanges(maxWidth, width));
+    // return the added with of this widget and the ones on its right
+    return range.addRanges(this.widgetsByLocalID[localID].width, rightWidth);
   }
 
   // calculates the range containing all possible widths of this widget
   calculateWidth() {
-    // function to recursively calculate width
-    const recursiveStep = (localID) => {
-      // the widgets directly on the right of this one
-      const localIDsOfWidgetsOnRight = this.right.successors(localID);
-
-      // base case: if there are no widgets on the right, return your width
-      if (localIDsOfWidgetsOnRight.length === 0) {
-        return this.widgetsByLocalID[localID].width;
-      }
-      // recursively calculate the width of all widgets on this one's right
-      // and determine the range of possible overall widths for the right
-      const rightWidth = localIDsOfWidgetsOnRight
-        .map(rightLocalID => recursiveStep(rightLocalID))
-        .reduce((maxWidth, width) => range.maxRanges(maxWidth, width));
-      // return the added with of this widget and the ones on its right
-      return range.addRanges(this.widgetsByLocalID[localID].width, rightWidth);
-    };
-
     // call the recursive function on all widgets on the far left
     // and determine the range of possible overall widths
     const width = this.right.sources()
-      .map(localID => recursiveStep(localID))
+      .map(localID => this.widthFromWidget(localID))
       .reduce((maxWidth, w) => range.maxRanges(maxWidth, w));
     return range.clipRange(width, Number.NEGATIVE_INFINITY, this.maximumWidth);
   }
@@ -193,10 +188,7 @@ class Layout {
 // ouput is a ResponsiveLayout: array of number, Layout pairs
 //   the number specifies the minimum width for which the layout is valid
 function createLayouts(widget, layoutAlg, widthAlg) {
-  const layoutFunc = (i) => {
-    const layout = new Layout(widget, widthAlg);
-    return layoutAlg(layout, widget, i);
-  };
+  const layoutFunc = i => layoutAlg(widget, widthAlg, i);
   const responsiveLayout = Breakpoints.fromFunction(
     arrUtils.range(maxScreenWidth),
     layoutFunc,

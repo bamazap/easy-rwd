@@ -3,16 +3,18 @@ const graphlib = require('graphlib');
 const { wrap } = require('./utils/object-utils');
 const Counter = require('./utils/counter');
 
-// returns the number of widgets in a list that are pages
-//   i.e. not children of any other widgets in the list
-function countPages(widgets) {
-  const pageNames = new Set(widgets.map(widget => widget.name));
-  widgets.forEach((widget) => {
+// returns the widgets in a widgets object which are pages
+function pages(widgets) {
+  const graph = new graphlib.Graph();
+  Object.keys(widgets).forEach((widgetName) => {
+    graph.setNode(widgetName);
+  });
+  Object.values(widgets).forEach((widget) => {
     widget.children.forEach((child) => {
-      pageNames.delete(child.name);
+      graph.setEdge(widget.name, child.name);
     });
   });
-  return pageNames.size;
+  return graph.sources().map(widgetName => widgets[widgetName]);
 }
 
 // returns widget names in topologically sorted order
@@ -60,7 +62,7 @@ function uniqifyGlobally(widget, counter) {
 }
 
 module.exports = {
-  countPages,
+  pages,
   uniqifyLocally,
   uniqifyGlobally,
   topologicallySort,

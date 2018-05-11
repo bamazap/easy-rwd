@@ -1,22 +1,53 @@
 #!/usr/bin/env node
 const find = require('find');
+const { ArgumentParser } = require('argparse');
 
 const build = require('../index');
 const { exit }= require('../utils/utils');
-const { leftJustified } = require('../layout-algorithms');
-const { flexDAG } = require('../width-algorithms');
+const layoutAlgorithms = require('../layout-algorithms');
+const widthAlgorithms = require('../width-algorithms');
 
-const args = process.argv.slice(2);
-
-if (args.indexOf('--help') >= 0 || args.indexOf('-h') >= 0) {
-  exit('Usage: easy-rwd <json app spec>');
-}
-
-let file = args.shift();
+const parser = new ArgumentParser({
+  version: '0.0.1',
+  addHelp: true,
+  description: 'Easy-RWD'
+});
+parser.addArgument(
+  ['-la', '--layout-algorithm'],
+  {
+    help: 'Set the layout algorithm.',
+    choices: Object.keys(layoutAlgorithms),
+    defaultValue: 'leftJustified',
+  }
+);
+parser.addArgument(
+  ['-wa', '--width-algorithm'],
+  {
+    help: 'Set the width algorithm.',
+    choices: Object.keys(widthAlgorithms),
+    defaultValue: 'flexDAG',
+  }
+);
+parser.addArgument(
+  ['-o', '--output-directory'],
+  {
+    help: 'Directory generated files should be placed in.',
+    defaultValue: './build',
+  }
+);
+parser.addArgument(
+  'jsonfile',
+  {
+    help: 'The JSON app specification.',
+    nargs: '?',
+  }
+);
+const args = parser.parseArgs();
 
 // If no file is named, try to get the only json file.
 // if file is named, verify it exists
 // TODO: search current directory only (no child directories)
+let file = args.jsonfile;
 if (!file) {
   const files = find.fileSync(/\.json$/, '.');
   if (files.length === 0) {
@@ -30,4 +61,8 @@ if (!file) {
   exit(`File ${file} not found.`, 1);
 }
 
-build(file, leftJustified, flexDAG); // TODO: allow users to choose algorithms
+const dir = args.output_directory;
+const layoutAlgorithm = layoutAlgorithms[args.layout_algorithm];
+const widthAlgorithm = widthAlgorithms[args.width_algorithm];
+
+build(file, layoutAlgorithm, widthAlgorithm, dir);

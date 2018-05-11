@@ -135,13 +135,13 @@ function readHead() {
   return files.length === 1 ? fs.readFileSync(files[0], 'utf8') : '';
 }
 
-function buildDir() {
-  fs.emptyDirSync('./build');
+function buildDir(dir) {
+  fs.emptyDirSync(dir);
 }
 
-function writeOut(pageName, html, css) {
-  fs.writeFileSync(`./build/${pageName}.html`, html);
-  fs.writeFileSync(`./build/${pageName}.css`, css);
+function writeOut(dir, pageName, html, css) {
+  fs.writeFileSync(`${dir}/${pageName}.html`, html);
+  fs.writeFileSync(`${dir}/${pageName}.css`, css);
 }
 
 module.exports = {
